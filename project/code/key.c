@@ -78,6 +78,9 @@ void menu_key_init(uint32 scan_period)
  */
 void menu_key_scan(void)
 {
+    // 调用逐飞按键驱动的扫描函数来更新按键状态
+    key_scanner();
+
     // 获取当前按键状态
     key_state_enum key1_state = key_get_state(KEY_1);
     key_state_enum key2_state = key_get_state(KEY_2);
