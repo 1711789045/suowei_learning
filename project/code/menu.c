@@ -886,13 +886,13 @@ void menu_example_create(void)
 
     // ==================== 链接菜单 ====================
 
-    // 一级菜单链接（循环）
+    // 一级菜单链接（循环），back为NULL表示顶层菜单
     menu_link(menu_root, NULL, car_start, car_start, NULL);
-    menu_link(car_start, debug, parameter, NULL, menu_root);          // 循环：上一个是debug
-    menu_link(parameter, car_start, save_config, servo_page, menu_root);
-    menu_link(save_config, parameter, load_config, save_slot1, menu_root);
-    menu_link(load_config, save_config, debug, load_slot1, menu_root);
-    menu_link(debug, load_config, car_start, debug_show_image, menu_root);  // 循环：下一个是car_start
+    menu_link(car_start, debug, parameter, NULL, NULL);          // 循环：上一个是debug，无back
+    menu_link(parameter, car_start, save_config, servo_page, NULL);
+    menu_link(save_config, parameter, load_config, save_slot1, NULL);
+    menu_link(load_config, save_config, debug, load_slot1, NULL);
+    menu_link(debug, load_config, car_start, debug_show_image, NULL);  // 循环：下一个是car_start，无back
 
     // Parameter二级菜单链接（循环）
     menu_link(servo_page, image_page, motor_page, servo_param1, parameter);  // 循环：上一个是image_page
@@ -939,9 +939,15 @@ void menu_example_create(void)
  */
 void menu_example_enter(void)
 {
-    // 直接进入第一个菜单项（car_start），不显示"Main Menu"
+    // 进入一级菜单，从car_start开始
     if (menu_root != NULL && menu_root->down != NULL)
     {
-        menu_enter(menu_root->down);
+        menu_unit_t *car_start = menu_root->down;
+        current_unit = car_start;
+        page_first_unit = car_start;
+        current_line = 0;
+        edit_mode = 0;
+        menu_active = 1;
+        menu_refresh();
     }
 }
