@@ -430,6 +430,10 @@ static void menu_refresh_page(void)
         uint8 selected = (unit == current_unit) ? 1 : 0;
         menu_display_item(unit, i, selected, edit_mode && selected);
         unit = unit->down;
+
+        // 防止循环链接导致重复显示：如果回到起点则停止
+        if (unit == page_first_unit)
+            break;
     }
 }
 
@@ -935,8 +939,9 @@ void menu_example_create(void)
  */
 void menu_example_enter(void)
 {
-    if (menu_root != NULL)
+    // 直接进入第一个菜单项（car_start），不显示"Main Menu"
+    if (menu_root != NULL && menu_root->down != NULL)
     {
-        menu_enter(menu_root);
+        menu_enter(menu_root->down);
     }
 }

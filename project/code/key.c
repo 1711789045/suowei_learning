@@ -159,21 +159,25 @@ void menu_key_scan(void)
             if (key1_state == KEY_RELEASE && key1_last != KEY_RELEASE)
             {
                 key_event = MENU_KEY_UP;
+                key_clear_state(KEY_1);
             }
             // KEY2: 下键
             else if (key2_state == KEY_RELEASE && key2_last != KEY_RELEASE)
             {
                 key_event = MENU_KEY_DOWN;
+                key_clear_state(KEY_2);
             }
             // KEY3: 确认键
             else if (key3_state == KEY_RELEASE && key3_last != KEY_RELEASE)
             {
                 key_event = MENU_KEY_ENTER;
+                key_clear_state(KEY_3);
             }
             // KEY4: 返回键
             else if (key4_state == KEY_RELEASE && key4_last != KEY_RELEASE)
             {
                 key_event = MENU_KEY_BACK;
+                key_clear_state(KEY_4);
             }
         }
     }
