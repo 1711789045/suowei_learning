@@ -121,8 +121,11 @@ static void menu_display_item(menu_unit_t *unit, uint8 line, uint8 selected, uin
     uint16 y = MENU_ITEM_START_Y + line * MENU_FONT_H;
     uint16 color = MENU_COLOR_TEXT;
 
-    // 清除该行
-    ips114_draw_rectangle(0, y, MENU_SCREEN_W - 1, y + MENU_FONT_H - 1, MENU_COLOR_BG);
+    // 清除该行 (使用水平线填充矩形)
+    for (uint16 i = y; i < y + MENU_FONT_H; i++)
+    {
+        ips114_draw_line(0, i, MENU_SCREEN_W - 1, i, MENU_COLOR_BG);
+    }
 
     // 显示选中标记
     if (selected)

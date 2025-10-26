@@ -2809,6 +2809,15 @@
         <file>
             <name>$PROJ_DIR$\..\..\user\main_cm4.c</name>
         </file>
+        <file>
+            <name>$PROJ_DIR$\..\..\code\menu.c</name>
+        </file>
+        <file>
+            <name>$PROJ_DIR$\..\..\code\key.c</name>
+        </file>
+        <file>
+            <name>$PROJ_DIR$\..\..\code\flash.c</name>
+        </file>
     </group>
     <group>
         <name>zf_common</name>

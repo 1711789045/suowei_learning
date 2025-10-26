@@ -36,12 +36,14 @@
 #include "key.h"
 
 // ==================== 配置参数 ====================
-#define LONG_PRESS_TIME     30      // 长按检测时间（单位：扫描周期，约30*20ms=600ms）
+#define LONG_PRESS_TIME         30      // 长按检测时间（单位：扫描周期，约30*20ms=600ms）
+#define LONG_PRESS_REPEAT_TIME  5       // 长按连续触发间隔（单位：扫描周期，约5*20ms=100ms）
 
 // ==================== 内部变量 ====================
 static uint32 key_scan_period = 20;     // 按键扫描周期（毫秒）
 static uint8 long_press_cnt = 0;        // 长按计数器
 static uint8 long_press_button = 0;     // 长按按键ID（0=无，1-4对应KEY1-4）
+static uint8 long_press_repeat_cnt = 0; // 长按连续触发计数器
 static menu_key_e key_event = MENU_KEY_NONE;    // 按键事件
 
 // 按键状态变量
@@ -65,6 +67,7 @@ void menu_key_init(uint32 scan_period)
     // 清除状态
     long_press_cnt = 0;
     long_press_button = 0;
+    long_press_repeat_cnt = 0;
     key_event = MENU_KEY_NONE;
 
     printf("[KEY] Menu key initialized (scan period: %d ms)\r\n", scan_period);
@@ -124,47 +127,50 @@ void menu_key_scan(void)
         long_press_button = 0;
     }
 
-    // 检测按键事件（释放时触发或长按触发）
+    // 检测按键事件（释放时触发或长按连续触发）
     if (key_event == MENU_KEY_NONE)  // 如果上次事件已被处理
     {
-        // KEY1: 上键
-        if ((key1_state == KEY_RELEASE && key1_last != KEY_RELEASE) || long_press_button == 1)
+        // 长按连续触发逻辑
+        if (long_press_button > 0)
         {
-            key_event = MENU_KEY_UP;
-            if (long_press_button == 1)
+            long_press_repeat_cnt++;
+            if (long_press_repeat_cnt >= LONG_PRESS_REPEAT_TIME)
             {
-                long_press_button = 0;
-                long_press_cnt = 0;
+                long_press_repeat_cnt = 0;  // 重置重复计数器，准备下次触发
+
+                // 根据长按的按键ID发送对应事件
+                if (long_press_button == 1)
+                    key_event = MENU_KEY_UP;
+                else if (long_press_button == 2)
+                    key_event = MENU_KEY_DOWN;
+                else if (long_press_button == 3)
+                    key_event = MENU_KEY_ENTER;
+                else if (long_press_button == 4)
+                    key_event = MENU_KEY_BACK;
             }
         }
-        // KEY2: 下键
-        else if ((key2_state == KEY_RELEASE && key2_last != KEY_RELEASE) || long_press_button == 2)
+        // 短按检测（按键释放时触发）
+        else
         {
-            key_event = MENU_KEY_DOWN;
-            if (long_press_button == 2)
+            // KEY1: 上键
+            if (key1_state == KEY_RELEASE && key1_last != KEY_RELEASE)
             {
-                long_press_button = 0;
-                long_press_cnt = 0;
+                key_event = MENU_KEY_UP;
             }
-        }
-        // KEY3: 确认键
-        else if ((key3_state == KEY_RELEASE && key3_last != KEY_RELEASE) || long_press_button == 3)
-        {
-            key_event = MENU_KEY_ENTER;
-            if (long_press_button == 3)
+            // KEY2: 下键
+            else if (key2_state == KEY_RELEASE && key2_last != KEY_RELEASE)
             {
-                long_press_button = 0;
-                long_press_cnt = 0;
+                key_event = MENU_KEY_DOWN;
             }
-        }
-        // KEY4: 返回键
-        else if ((key4_state == KEY_RELEASE && key4_last != KEY_RELEASE) || long_press_button == 4)
-        {
-            key_event = MENU_KEY_BACK;
-            if (long_press_button == 4)
+            // KEY3: 确认键
+            else if (key3_state == KEY_RELEASE && key3_last != KEY_RELEASE)
             {
-                long_press_button = 0;
-                long_press_cnt = 0;
+                key_event = MENU_KEY_ENTER;
+            }
+            // KEY4: 返回键
+            else if (key4_state == KEY_RELEASE && key4_last != KEY_RELEASE)
+            {
+                key_event = MENU_KEY_BACK;
             }
         }
     }
@@ -202,4 +208,5 @@ void menu_key_clear_all(void)
     key_event = MENU_KEY_NONE;
     long_press_cnt = 0;
     long_press_button = 0;
+    long_press_repeat_cnt = 0;
 }
