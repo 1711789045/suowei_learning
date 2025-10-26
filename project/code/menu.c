@@ -147,6 +147,29 @@ static void menu_display_item(menu_unit_t *unit, uint8 line, uint8 selected, uin
     }
 }
 
+/**
+ * @brief  只刷新光标位置（优化刷新速度）
+ */
+static void menu_display_cursor(uint8 line, uint8 show)
+{
+    if (line >= MENU_ITEMS_PER_PAGE)
+        return;
+
+    uint16 y = MENU_ITEM_START_Y + line * MENU_FONT_H;
+
+    // 清除光标位置
+    for (uint16 i = y; i < y + MENU_FONT_H; i++)
+    {
+        ips114_draw_line(0, i, 8, i, MENU_COLOR_BG);  // 只清除光标位置(8像素宽)
+    }
+
+    // 显示光标
+    if (show)
+    {
+        ips114_show_string(0, y, ">");
+    }
+}
+
 // ==================== 菜单核心模块数据 ====================
 static menu_unit_t menu_units[MENU_MAX_UNITS];     // 菜单单元池
 static uint8 menu_unit_count = 0;                  // 已使用的菜单单元数量
@@ -411,31 +434,15 @@ static void menu_refresh_page(void)
 }
 
 /**
- * @brief  局部刷新（只刷新变化的行）
+ * @brief  局部刷新（只刷新光标位置）
  */
 static void menu_refresh_partial(void)
 {
-    // 清除上次选中行的选择标记
-    menu_unit_t *unit = page_first_unit;
-    for (uint8 i = 0; i < last_line && unit != NULL; i++)
-    {
-        unit = unit->down;
-    }
-    if (unit != NULL)
-    {
-        menu_display_item(unit, last_line, 0, 0);
-    }
+    // 清除上次选中行的光标
+    menu_display_cursor(last_line, 0);
 
-    // 显示当前选中行
-    unit = page_first_unit;
-    for (uint8 i = 0; i < current_line && unit != NULL; i++)
-    {
-        unit = unit->down;
-    }
-    if (unit != NULL)
-    {
-        menu_display_item(unit, current_line, 1, edit_mode);
-    }
+    // 显示当前选中行的光标
+    menu_display_cursor(current_line, 1);
 }
 
 // ==================== 菜单核心 API 实现 ====================
@@ -648,43 +655,162 @@ uint8 menu_is_active(void)
 // ==================== 内置功能函数 ====================
 
 /**
- * @brief  保存配置到存档位
+ * @brief  在屏幕底部显示提示信息
  */
-void menu_func_save_config(void)
+static void menu_show_message(const char *msg)
 {
-    // 暂时保存到存档位0
+    uint16 msg_y = MENU_SCREEN_H - MENU_FONT_H;  // 屏幕底部
+
+    // 清除底部一行
+    for (uint16 i = msg_y; i < MENU_SCREEN_H; i++)
+    {
+        ips114_draw_line(0, i, MENU_SCREEN_W - 1, i, MENU_COLOR_BG);
+    }
+
+    // 显示消息
+    ips114_show_string(0, msg_y, (char *)msg);
+
+    // 延时显示
+    system_delay_ms(1000);
+
+    // 清除消息
+    for (uint16 i = msg_y; i < MENU_SCREEN_H; i++)
+    {
+        ips114_draw_line(0, i, MENU_SCREEN_W - 1, i, MENU_COLOR_BG);
+    }
+}
+
+/**
+ * @brief  发车函数
+ */
+void menu_func_car_start(void)
+{
+    menu_show_message("Car Start!");
+    printf("[CAR] Car started!\r\n");
+    // TODO: 实现发车逻辑
+}
+
+/**
+ * @brief  保存配置到存档位1
+ */
+void menu_func_save_slot1(void)
+{
     config_save_slot(0);
-    printf("[MENU] Configuration saved to slot 0\r\n");
+    menu_show_message("Saved to Slot 1");
+    printf("[MENU] Config saved to slot 1\r\n");
 }
 
 /**
- * @brief  加载配置从存档位
+ * @brief  保存配置到存档位2
  */
-void menu_func_load_config(void)
+void menu_func_save_slot2(void)
 {
-    // 暂时从存档位0加载
+    config_save_slot(1);
+    menu_show_message("Saved to Slot 2");
+    printf("[MENU] Config saved to slot 2\r\n");
+}
+
+/**
+ * @brief  保存配置到存档位3
+ */
+void menu_func_save_slot3(void)
+{
+    config_save_slot(2);
+    menu_show_message("Saved to Slot 3");
+    printf("[MENU] Config saved to slot 3\r\n");
+}
+
+/**
+ * @brief  保存配置到存档位4
+ */
+void menu_func_save_slot4(void)
+{
+    config_save_slot(3);
+    menu_show_message("Saved to Slot 4");
+    printf("[MENU] Config saved to slot 4\r\n");
+}
+
+/**
+ * @brief  从存档位1加载
+ */
+void menu_func_load_slot1(void)
+{
     config_load_slot(0);
-    printf("[MENU] Configuration loaded from slot 0\r\n");
+    menu_show_message("Loaded from Slot 1");
+    printf("[MENU] Config loaded from slot 1\r\n");
     menu_refresh();
 }
 
 /**
- * @brief  重置为默认值
+ * @brief  从存档位2加载
  */
-void menu_func_reset_default(void)
+void menu_func_load_slot2(void)
 {
-    config_reset_default();
-    printf("[MENU] Reset to default values\r\n");
+    config_load_slot(1);
+    menu_show_message("Loaded from Slot 2");
+    printf("[MENU] Config loaded from slot 2\r\n");
     menu_refresh();
+}
+
+/**
+ * @brief  从存档位3加载
+ */
+void menu_func_load_slot3(void)
+{
+    config_load_slot(2);
+    menu_show_message("Loaded from Slot 3");
+    printf("[MENU] Config loaded from slot 3\r\n");
+    menu_refresh();
+}
+
+/**
+ * @brief  从存档位4加载
+ */
+void menu_func_load_slot4(void)
+{
+    config_load_slot(3);
+    menu_show_message("Loaded from Slot 4");
+    printf("[MENU] Config loaded from slot 4\r\n");
+    menu_refresh();
+}
+
+/**
+ * @brief  显示图像
+ */
+void menu_func_show_image(void)
+{
+    menu_show_message("Show Image");
+    printf("[DEBUG] Show image\r\n");
+    // TODO: 实现图像显示
+}
+
+/**
+ * @brief  测试函数
+ */
+void menu_func_test(void)
+{
+    menu_show_message("Test Function");
+    printf("[DEBUG] Test function\r\n");
+    // TODO: 实现测试功能
 }
 
 // ==================== 菜单示例 ====================
 
-// 示例参数
-static float test_speed = 100.0f;
-static float test_kp = 5.0f;
-static int test_mode = 0;
-static uint16 test_value = 1000;
+// 舵机参数
+static float servo_center = 1500.0f;
+static float servo_left_max = 1800.0f;
+static float servo_right_max = 1200.0f;
+static float servo_kp = 1.0f;
+
+// 电机参数
+static float motor_speed = 100.0f;
+static float motor_kp = 5.0f;
+static float motor_ki = 0.5f;
+
+// 图像参数
+static uint16 image_threshold = 128;
+static uint16 image_exposure = 100;
+static float image_gain = 1.0f;
 
 // 菜单单元指针
 static menu_unit_t *menu_root = NULL;
@@ -695,44 +821,113 @@ static menu_unit_t *menu_root = NULL;
 void menu_example_create(void)
 {
     // 注册参数到配置系统
-    config_register_item("test_speed", &test_speed, CONFIG_TYPE_FLOAT, &test_speed, "Test Speed");
-    config_register_item("test_kp", &test_kp, CONFIG_TYPE_FLOAT, &test_kp, "Test Kp");
-    config_register_item("test_mode", &test_mode, CONFIG_TYPE_INT, &test_mode, "Test Mode");
-    config_register_item("test_value", &test_value, CONFIG_TYPE_UINT16, &test_value, "Test Value");
+    config_register_item("servo_center", &servo_center, CONFIG_TYPE_FLOAT, &servo_center, "Servo Center");
+    config_register_item("servo_left_max", &servo_left_max, CONFIG_TYPE_FLOAT, &servo_left_max, "Servo Left Max");
+    config_register_item("servo_right_max", &servo_right_max, CONFIG_TYPE_FLOAT, &servo_right_max, "Servo Right Max");
+    config_register_item("servo_kp", &servo_kp, CONFIG_TYPE_FLOAT, &servo_kp, "Servo Kp");
 
-    // 创建主菜单
+    config_register_item("motor_speed", &motor_speed, CONFIG_TYPE_FLOAT, &motor_speed, "Motor Speed");
+    config_register_item("motor_kp", &motor_kp, CONFIG_TYPE_FLOAT, &motor_kp, "Motor Kp");
+    config_register_item("motor_ki", &motor_ki, CONFIG_TYPE_FLOAT, &motor_ki, "Motor Ki");
+
+    config_register_item("image_threshold", &image_threshold, CONFIG_TYPE_UINT16, &image_threshold, "Image Threshold");
+    config_register_item("image_exposure", &image_exposure, CONFIG_TYPE_UINT16, &image_exposure, "Image Exposure");
+    config_register_item("image_gain", &image_gain, CONFIG_TYPE_FLOAT, &image_gain, "Image Gain");
+
+    // ========== 一级菜单 ==========
     menu_root = menu_create_unit("Main Menu", MENU_UNIT_PAGE);
 
-    // 创建参数页面
-    menu_unit_t *param_page = menu_create_unit("Parameters", MENU_UNIT_PAGE);
-    menu_unit_t *param1 = menu_create_param("Speed", &test_speed, CONFIG_TYPE_FLOAT, 10.0f, 3, 1);
-    menu_unit_t *param2 = menu_create_param("Kp", &test_kp, CONFIG_TYPE_FLOAT, 0.1f, 2, 2);
-    menu_unit_t *param3 = menu_create_param("Mode", &test_mode, CONFIG_TYPE_INT, 1.0f, 2, 0);
-    menu_unit_t *param4 = menu_create_param("Value", &test_value, CONFIG_TYPE_UINT16, 100.0f, 4, 0);
+    menu_unit_t *car_start = menu_create_function("Car_Start", menu_func_car_start);
+    menu_unit_t *parameter = menu_create_unit("Parameter", MENU_UNIT_PAGE);
+    menu_unit_t *save_config = menu_create_unit("Save_config", MENU_UNIT_PAGE);
+    menu_unit_t *load_config = menu_create_unit("Load_config", MENU_UNIT_PAGE);
+    menu_unit_t *debug = menu_create_unit("Debug", MENU_UNIT_PAGE);
 
-    // 创建功能页面
-    menu_unit_t *func_page = menu_create_unit("Functions", MENU_UNIT_PAGE);
-    menu_unit_t *func_save = menu_create_function("Save Config", menu_func_save_config);
-    menu_unit_t *func_load = menu_create_function("Load Config", menu_func_load_config);
-    menu_unit_t *func_reset = menu_create_function("Reset Default", menu_func_reset_default);
+    // ========== Parameter二级菜单 ==========
+    menu_unit_t *servo_page = menu_create_unit("Servo", MENU_UNIT_PAGE);
+    menu_unit_t *motor_page = menu_create_unit("Motor", MENU_UNIT_PAGE);
+    menu_unit_t *image_page = menu_create_unit("Image", MENU_UNIT_PAGE);
 
-    // 链接主菜单
-    menu_link(menu_root, NULL, param_page, param_page, NULL);
-    menu_link(param_page, menu_root, func_page, param1, menu_root);
-    menu_link(func_page, param_page, NULL, func_save, menu_root);
+    // ========== Servo三级参数 ==========
+    menu_unit_t *servo_param1 = menu_create_param("servo_center", &servo_center, CONFIG_TYPE_FLOAT, 10.0f, 4, 0);
+    menu_unit_t *servo_param2 = menu_create_param("left_max", &servo_left_max, CONFIG_TYPE_FLOAT, 10.0f, 4, 0);
+    menu_unit_t *servo_param3 = menu_create_param("right_max", &servo_right_max, CONFIG_TYPE_FLOAT, 10.0f, 4, 0);
+    menu_unit_t *servo_param4 = menu_create_param("servo_kp", &servo_kp, CONFIG_TYPE_FLOAT, 0.1f, 2, 1);
 
-    // 链接参数页面
-    menu_link(param1, NULL, param2, NULL, param_page);
-    menu_link(param2, param1, param3, NULL, param_page);
-    menu_link(param3, param2, param4, NULL, param_page);
-    menu_link(param4, param3, NULL, NULL, param_page);
+    // ========== Motor三级参数 ==========
+    menu_unit_t *motor_param1 = menu_create_param("motor_speed", &motor_speed, CONFIG_TYPE_FLOAT, 5.0f, 3, 1);
+    menu_unit_t *motor_param2 = menu_create_param("motor_kp", &motor_kp, CONFIG_TYPE_FLOAT, 0.1f, 2, 2);
+    menu_unit_t *motor_param3 = menu_create_param("motor_ki", &motor_ki, CONFIG_TYPE_FLOAT, 0.1f, 2, 2);
 
-    // 链接功能页面
-    menu_link(func_save, NULL, func_load, NULL, func_page);
-    menu_link(func_load, func_save, func_reset, NULL, func_page);
-    menu_link(func_reset, func_load, NULL, NULL, func_page);
+    // ========== Image三级参数 ==========
+    menu_unit_t *image_param1 = menu_create_param("threshold", &image_threshold, CONFIG_TYPE_UINT16, 5.0f, 3, 0);
+    menu_unit_t *image_param2 = menu_create_param("exposure", &image_exposure, CONFIG_TYPE_UINT16, 10.0f, 3, 0);
+    menu_unit_t *image_param3 = menu_create_param("gain", &image_gain, CONFIG_TYPE_FLOAT, 0.1f, 1, 1);
 
-    printf("[MENU_EXAMPLE] Menu created\r\n");
+    // ========== Save_config二级菜单 ==========
+    menu_unit_t *save_slot1 = menu_create_function("Slot 1", menu_func_save_slot1);
+    menu_unit_t *save_slot2 = menu_create_function("Slot 2", menu_func_save_slot2);
+    menu_unit_t *save_slot3 = menu_create_function("Slot 3", menu_func_save_slot3);
+    menu_unit_t *save_slot4 = menu_create_function("Slot 4", menu_func_save_slot4);
+
+    // ========== Load_config二级菜单 ==========
+    menu_unit_t *load_slot1 = menu_create_function("Slot 1", menu_func_load_slot1);
+    menu_unit_t *load_slot2 = menu_create_function("Slot 2", menu_func_load_slot2);
+    menu_unit_t *load_slot3 = menu_create_function("Slot 3", menu_func_load_slot3);
+    menu_unit_t *load_slot4 = menu_create_function("Slot 4", menu_func_load_slot4);
+
+    // ========== Debug二级菜单 ==========
+    menu_unit_t *debug_show_image = menu_create_function("Show Image", menu_func_show_image);
+    menu_unit_t *debug_test = menu_create_function("Test Function", menu_func_test);
+
+    // ==================== 链接菜单 ====================
+
+    // 一级菜单链接（循环）
+    menu_link(menu_root, NULL, car_start, car_start, NULL);
+    menu_link(car_start, debug, parameter, NULL, menu_root);          // 循环：上一个是debug
+    menu_link(parameter, car_start, save_config, servo_page, menu_root);
+    menu_link(save_config, parameter, load_config, save_slot1, menu_root);
+    menu_link(load_config, save_config, debug, load_slot1, menu_root);
+    menu_link(debug, load_config, car_start, debug_show_image, menu_root);  // 循环：下一个是car_start
+
+    // Parameter二级菜单链接（循环）
+    menu_link(servo_page, image_page, motor_page, servo_param1, parameter);  // 循环：上一个是image_page
+    menu_link(motor_page, servo_page, image_page, motor_param1, parameter);
+    menu_link(image_page, motor_page, servo_page, image_param1, parameter);  // 循环：下一个是servo_page
+
+    // Servo三级参数链接（循环）
+    menu_link(servo_param1, servo_param4, servo_param2, NULL, servo_page);   // 循环
+    menu_link(servo_param2, servo_param1, servo_param3, NULL, servo_page);
+    menu_link(servo_param3, servo_param2, servo_param4, NULL, servo_page);
+    menu_link(servo_param4, servo_param3, servo_param1, NULL, servo_page);   // 循环
+
+    // Motor三级参数链接（循环）
+    menu_link(motor_param1, motor_param3, motor_param2, NULL, motor_page);   // 循环
+    menu_link(motor_param2, motor_param1, motor_param3, NULL, motor_page);
+    menu_link(motor_param3, motor_param2, motor_param1, NULL, motor_page);   // 循环
+
+    // Image三级参数链接（循环）
+    menu_link(image_param1, image_param3, image_param2, NULL, image_page);   // 循环
+    menu_link(image_param2, image_param1, image_param3, NULL, image_page);
+    menu_link(image_param3, image_param2, image_param1, NULL, image_page);   // 循环
+
+    // Save_config二级菜单链接（循环）
+    menu_link(save_slot1, save_slot4, save_slot2, NULL, save_config);        // 循环
+    menu_link(save_slot2, save_slot1, save_slot3, NULL, save_config);
+    menu_link(save_slot3, save_slot2, save_slot4, NULL, save_config);
+    menu_link(save_slot4, save_slot3, save_slot1, NULL, save_config);        // 循环
+
+    // Load_config二级菜单链接（循环）
+    menu_link(load_slot1, load_slot4, load_slot2, NULL, load_config);        // 循环
+    menu_link(load_slot2, load_slot1, load_slot3, NULL, load_config);
+    menu_link(load_slot3, load_slot2, load_slot4, NULL, load_config);
+    menu_link(load_slot4, load_slot3, load_slot1, NULL, load_config);        // 循环
+
+    // Debug二级菜单链接（循环）
+    menu_link(debug_show_image, debug_test, debug_test, NULL, debug);        // 循环
+    menu_link(debug_test, debug_show_image, debug_show_image, NULL, debug);  // 循环
+
+    printf("[MENU_EXAMPLE] Three-level menu created\r\n");
 }
 
 /**
