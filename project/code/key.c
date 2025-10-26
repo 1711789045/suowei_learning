@@ -21,7 +21,7 @@
 * 许可证副本在 libraries 文件夹下 即该文件夹下的 LICENSE 文件
 * 欢迎各位使用并传播本程序 但修改内容时必须保留逐飞科技的版权声明（即本声明）
 *
-* 文件名称          menu_key
+* 文件名称          key
 * 公司名称          成都逐飞科技有限公司
 * 版本信息          查看 libraries/doc 文件夹内 version 文件 版本说明
 * 开发环境          IAR 9.40.1
@@ -30,10 +30,10 @@
 *
 * 修改记录
 * 日期              作者                备注
-* 2025-10-26       Claude             移植自龙芯C车代码，使用zf_device_key驱动
+* 2025-10-26       Claude             菜单按键处理模块
 ********************************************************************************************************************/
 
-#include "menu_key.h"
+#include "key.h"
 
 // ==================== 配置参数 ====================
 #define LONG_PRESS_TIME     30      // 长按检测时间（单位：扫描周期，约30*20ms=600ms）
@@ -67,7 +67,7 @@ void menu_key_init(uint32 scan_period)
     long_press_button = 0;
     key_event = MENU_KEY_NONE;
 
-    printf("[MENU_KEY] Menu key initialized (scan period: %d ms)\r\n", scan_period);
+    printf("[KEY] Menu key initialized (scan period: %d ms)\r\n", scan_period);
 }
 
 /**

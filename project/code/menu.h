@@ -21,7 +21,7 @@
 * 许可证副本在 libraries 文件夹下 即该文件夹下的 LICENSE 文件
 * 欢迎各位使用并传播本程序 但修改内容时必须保留逐飞科技的版权声明（即本声明）
 *
-* 文件名称          menu_display
+* 文件名称          menu
 * 公司名称          成都逐飞科技有限公司
 * 版本信息          查看 libraries/doc 文件夹内 version 文件 版本说明
 * 开发环境          IAR 9.40.1
@@ -30,20 +30,21 @@
 *
 * 修改记录
 * 日期              作者                备注
-* 2025-10-26       Claude             移植自龙芯C车代码，适配IPS114屏幕
+* 2025-10-26       Claude             菜单系统（核心+显示+示例）
 ********************************************************************************************************************/
 
-#ifndef _MENU_DISPLAY_H_
-#define _MENU_DISPLAY_H_
+#ifndef _MENU_H_
+#define _MENU_H_
 
 #include "zf_common_headfile.h"
-#include "menu_config.h"
+#include "key.h"
+#include "flash.h"
 
 // ==================== 屏幕参数（IPS114: 240x135）====================
 #define MENU_SCREEN_W           240             // 屏幕宽度
 #define MENU_SCREEN_H           135             // 屏幕高度
 #define MENU_FONT_H             16              // 字体高度（8x16字体）
-#define MENU_ITEMS_PER_PAGE     6               // 每页显示的参数数量（原IPS200为8，IPS114高度小，改为6）
+#define MENU_ITEMS_PER_PAGE     6               // 每页显示的参数数量
 
 #define MENU_TITLE_Y            0               // 标题Y坐标
 #define MENU_ITEM_START_Y       MENU_FONT_H     // 第一个菜单项Y坐标
@@ -54,6 +55,9 @@
 #define MENU_COLOR_SELECT       RGB565_BLUE     // 选中项颜色
 #define MENU_COLOR_EDIT         RGB565_RED      // 编辑模式颜色
 
+// ==================== 菜单配置 ====================
+#define MENU_MAX_UNITS      100         // 最大菜单单元数量
+
 // ==================== 菜单单元类型 ====================
 typedef enum {
     MENU_UNIT_NORMAL = 0,       // 普通参数
@@ -62,7 +66,6 @@ typedef enum {
 } menu_unit_type_e;
 
 // ==================== 菜单单元结构体 ====================
-// 菜单单元（链表节点）
 typedef struct MENU_UNIT {
     char name[16];                      // 显示名称
     menu_unit_type_e type;              // 单元类型
@@ -87,89 +90,130 @@ typedef struct MENU_UNIT {
     uint8 index[2];                     // [页面索引, 项目索引]
 } menu_unit_t;
 
-// ==================== API 函数 ====================
+// ==================== 菜单核心 API ====================
 
 /**
- * @brief  初始化菜单显示
+ * @brief  初始化菜单系统
  * @param  无
  * @return 无
+ * @note   在main函数中调用，初始化所有菜单模块
  */
-void menu_display_init(void);
+void menu_init(void);
 
 /**
- * @brief  显示菜单标题
- * @param  title: 标题字符串
- * @return 无
+ * @brief  创建菜单单元
+ * @param  name: 显示名称
+ * @param  type: 单元类型
+ * @return 菜单单元指针
  */
-void menu_display_title(const char *title);
+menu_unit_t* menu_create_unit(const char *name, menu_unit_type_e type);
 
 /**
- * @brief  显示菜单项
- * @param  unit: 菜单单元指针
- * @param  line: 行号（0-5）
- * @param  selected: 是否选中
- * @param  edit_mode: 是否处于编辑模式
- * @return 无
- */
-void menu_display_item(menu_unit_t *unit, uint8 line, uint8 selected, uint8 edit_mode);
-
-/**
- * @brief  显示参数值
- * @param  unit: 菜单单元指针
- * @param  x: X坐标
- * @param  y: Y坐标
- * @param  color: 文本颜色
- * @return 无
- */
-void menu_display_param_value(menu_unit_t *unit, uint16 x, uint16 y, uint16 color);
-
-/**
- * @brief  清除指定区域
- * @param  x1: 起始X坐标
- * @param  y1: 起始Y坐标
- * @param  x2: 结束X坐标
- * @param  y2: 结束Y坐标
- * @return 无
- */
-void menu_display_clear_area(uint16 x1, uint16 y1, uint16 x2, uint16 y2);
-
-/**
- * @brief  清屏
- * @param  无
- * @return 无
- */
-void menu_display_clear(void);
-
-/**
- * @brief  显示字符串
- * @param  x: X坐标
- * @param  y: Y坐标
- * @param  str: 字符串
- * @param  color: 文本颜色
- * @return 无
- */
-void menu_display_string(uint16 x, uint16 y, const char *str, uint16 color);
-
-/**
- * @brief  显示整数
- * @param  x: X坐标
- * @param  y: Y坐标
- * @param  value: 整数值
- * @param  color: 文本颜色
- * @return 无
- */
-void menu_display_int(uint16 x, uint16 y, int32 value, uint16 color);
-
-/**
- * @brief  显示浮点数
- * @param  x: X坐标
- * @param  y: Y坐标
- * @param  value: 浮点数值
+ * @brief  创建参数单元
+ * @param  name: 显示名称
+ * @param  param_ptr: 参数指针
+ * @param  param_type: 参数类型
+ * @param  delta: 调整增量
  * @param  num_int: 整数位数
  * @param  num_dec: 小数位数
- * @param  color: 文本颜色
+ * @return 菜单单元指针
+ */
+menu_unit_t* menu_create_param(const char *name, void *param_ptr, config_type_e param_type,
+                                float delta, uint8 num_int, uint8 num_dec);
+
+/**
+ * @brief  创建功能单元
+ * @param  name: 显示名称
+ * @param  function: 功能函数指针
+ * @return 菜单单元指针
+ */
+menu_unit_t* menu_create_function(const char *name, void (*function)(void));
+
+/**
+ * @brief  链接菜单单元
+ * @param  current: 当前单元
+ * @param  up: 上一项
+ * @param  down: 下一项
+ * @param  enter: 进入项
+ * @param  back: 返回项
  * @return 无
  */
-void menu_display_float(uint16 x, uint16 y, float value, uint8 num_int, uint8 num_dec, uint16 color);
+void menu_link(menu_unit_t *current, menu_unit_t *up, menu_unit_t *down,
+               menu_unit_t *enter, menu_unit_t *back);
+
+/**
+ * @brief  菜单处理函数
+ * @param  无
+ * @return 无
+ * @note   在主循环或定时器中周期调用（建议20ms）
+ */
+void menu_process(void);
+
+/**
+ * @brief  刷新菜单显示
+ * @param  无
+ * @return 无
+ */
+void menu_refresh(void);
+
+/**
+ * @brief  进入菜单
+ * @param  root: 根菜单单元
+ * @return 无
+ */
+void menu_enter(menu_unit_t *root);
+
+/**
+ * @brief  退出菜单
+ * @param  无
+ * @return 无
+ */
+void menu_exit(void);
+
+/**
+ * @brief  检查菜单是否激活
+ * @param  无
+ * @return 0=未激活, 1=已激活
+ */
+uint8 menu_is_active(void);
+
+// ==================== 内置功能函数 ====================
+
+/**
+ * @brief  保存配置到存档位
+ * @param  无
+ * @return 无
+ */
+void menu_func_save_config(void);
+
+/**
+ * @brief  加载配置从存档位
+ * @param  无
+ * @return 无
+ */
+void menu_func_load_config(void);
+
+/**
+ * @brief  重置为默认值
+ * @param  无
+ * @return 无
+ */
+void menu_func_reset_default(void);
+
+// ==================== 菜单示例 API ====================
+
+/**
+ * @brief  创建菜单示例
+ * @param  无
+ * @return 无
+ */
+void menu_example_create(void);
+
+/**
+ * @brief  进入菜单示例
+ * @param  无
+ * @return 无
+ */
+void menu_example_enter(void);
 
 #endif
