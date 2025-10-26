@@ -153,7 +153,8 @@ static uint8 menu_unit_count = 0;                  // 已使用的菜单单元�
 
 static menu_unit_t *current_unit = NULL;           // 当前选中的菜单单元
 static menu_unit_t *page_first_unit = NULL;        // 当前页面第一个显示的单元
-static uint8 current_line = 0;                     // 当前选中行（0-5）
+static uint8 current_line = 0;                     // 当前选中行（0-7）
+static uint8 last_line = 0;                        // 上次选中行（用于局部刷新）
 static uint8 edit_mode = 0;                        // 编辑模式标志
 static uint8 menu_active = 0;                      // 菜单激活标志
 
@@ -164,28 +165,88 @@ static void menu_navigate_enter(void);
 static void menu_navigate_back(void);
 static void menu_edit_param(int8 direction);
 static void menu_refresh_page(void);
+static void menu_refresh_partial(void);
+
+/**
+ * @brief  计算当前层级菜单项数量
+ */
+static uint8 menu_count_items(menu_unit_t *first)
+{
+    uint8 count = 0;
+    menu_unit_t *p = first;
+    while (p != NULL)
+    {
+        count++;
+        p = p->down;
+    }
+    return count;
+}
+
+/**
+ * @brief  获取当前层级最后一项
+ */
+static menu_unit_t* menu_get_last_item(menu_unit_t *first)
+{
+    menu_unit_t *p = first;
+    while (p != NULL && p->down != NULL)
+    {
+        p = p->down;
+    }
+    return p;
+}
 
 /**
  * @brief  向上导航
  */
 static void menu_navigate_up(void)
 {
-    if (current_unit == NULL || current_unit->up == NULL)
+    if (current_unit == NULL)
         return;
 
+    // 循环：如果是第一项，跳到最后一项
+    if (current_unit->up == NULL)
+    {
+        // 找到最后一项
+        menu_unit_t *last = menu_get_last_item(page_first_unit);
+        if (last != NULL)
+        {
+            current_unit = last;
+            // 计算最后一项的行号
+            uint8 item_count = menu_count_items(page_first_unit);
+            if (item_count <= MENU_ITEMS_PER_PAGE)
+            {
+                current_line = item_count - 1;
+            }
+            else
+            {
+                current_line = MENU_ITEMS_PER_PAGE - 1;
+                // 调整page_first_unit使最后一项在最后一行显示
+                menu_unit_t *p = last;
+                for (uint8 i = 0; i < MENU_ITEMS_PER_PAGE - 1 && p->up != NULL; i++)
+                {
+                    p = p->up;
+                }
+                page_first_unit = p;
+            }
+            menu_refresh();  // 需要全屏刷新
+        }
+        return;
+    }
+
+    last_line = current_line;
     current_unit = current_unit->up;
 
     if (current_line > 0)
     {
         current_line--;
+        menu_refresh_partial();  // 局部刷新
     }
     else
     {
         // 需要向上滚动页面
         page_first_unit = current_unit;
+        menu_refresh();  // 全屏刷新
     }
-
-    menu_refresh();
 }
 
 /**
@@ -193,14 +254,43 @@ static void menu_navigate_up(void)
  */
 static void menu_navigate_down(void)
 {
-    if (current_unit == NULL || current_unit->down == NULL)
+    if (current_unit == NULL)
         return;
 
+    // 循环：如果是最后一项，跳到第一项
+    if (current_unit->down == NULL)
+    {
+        current_unit = page_first_unit;
+        current_line = 0;
+        menu_refresh();  // 需要全屏刷新
+        return;
+    }
+
+    last_line = current_line;
     current_unit = current_unit->down;
 
     if (current_line < MENU_ITEMS_PER_PAGE - 1)
     {
-        current_line++;
+        // 检查是否是最后一项
+        menu_unit_t *temp = page_first_unit;
+        uint8 count = 0;
+        while (temp != NULL)
+        {
+            count++;
+            temp = temp->down;
+        }
+
+        if (current_line + 1 < count)
+        {
+            current_line++;
+            menu_refresh_partial();  // 局部刷新
+        }
+        else
+        {
+            // 已经是最后一项，无需移动
+            current_line++;
+            menu_refresh_partial();
+        }
     }
     else
     {
@@ -208,9 +298,8 @@ static void menu_navigate_down(void)
         menu_unit_t *temp = page_first_unit;
         if (temp != NULL && temp->down != NULL)
             page_first_unit = temp->down;
+        menu_refresh();  // 全屏刷新
     }
-
-    menu_refresh();
 }
 
 /**
@@ -305,15 +394,11 @@ static void menu_edit_param(int8 direction)
 }
 
 /**
- * @brief  刷新页面显示
+ * @brief  刷新页面显示（全屏刷新）
  */
 static void menu_refresh_page(void)
 {
     ips114_clear();
-
-    // 显示标题
-    uint16 title_x = (MENU_SCREEN_W - strlen("Menu System") * 8) / 2;
-    ips114_show_string(title_x, MENU_TITLE_Y, "Menu System");
 
     // 显示菜单项
     menu_unit_t *unit = page_first_unit;
@@ -322,6 +407,34 @@ static void menu_refresh_page(void)
         uint8 selected = (unit == current_unit) ? 1 : 0;
         menu_display_item(unit, i, selected, edit_mode && selected);
         unit = unit->down;
+    }
+}
+
+/**
+ * @brief  局部刷新（只刷新变化的行）
+ */
+static void menu_refresh_partial(void)
+{
+    // 清除上次选中行的选择标记
+    menu_unit_t *unit = page_first_unit;
+    for (uint8 i = 0; i < last_line && unit != NULL; i++)
+    {
+        unit = unit->down;
+    }
+    if (unit != NULL)
+    {
+        menu_display_item(unit, last_line, 0, 0);
+    }
+
+    // 显示当前选中行
+    unit = page_first_unit;
+    for (uint8 i = 0; i < current_line && unit != NULL; i++)
+    {
+        unit = unit->down;
+    }
+    if (unit != NULL)
+    {
+        menu_display_item(unit, current_line, 1, edit_mode);
     }
 }
 

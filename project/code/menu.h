@@ -44,10 +44,9 @@
 #define MENU_SCREEN_W           240             // 屏幕宽度
 #define MENU_SCREEN_H           135             // 屏幕高度
 #define MENU_FONT_H             16              // 字体高度（8x16字体）
-#define MENU_ITEMS_PER_PAGE     6               // 每页显示的参数数量
+#define MENU_ITEMS_PER_PAGE     8               // 每页显示的参数数量(去掉标题后可显示8行)
 
-#define MENU_TITLE_Y            0               // 标题Y坐标
-#define MENU_ITEM_START_Y       MENU_FONT_H     // 第一个菜单项Y坐标
+#define MENU_ITEM_START_Y       0               // 第一个菜单项Y坐标(从顶部开始)
 
 // 颜色定义
 #define MENU_COLOR_BG           RGB565_BLACK    // 背景色
