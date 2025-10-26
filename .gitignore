@@ -1,0 +1,50 @@
+# IAR编译输出目录
+Debug/
+Release/
+*.out
+*.hex
+*.bin
+*.map
+*.lst
+
+# IAR项目设置和临时文件
+settings/
+*.dep
+*.ewd
+*.ewt
+*.dni
+*.wsdt
+*.dbgdt
+*.wspos
+*.dnx
+*.xcl
+*.sim
+*.cout
+*.pbi
+*.pbd
+*.pbd.*
+*.browse
+*.tmp
+
+# IAR备份文件
+Backup*/
+*.bak
+
+# VSCode配置（可选，根据需要保留或排除）
+.vscode/
+
+# 系统文件
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+
+# 临时文件
+*.log
+*.temp
+*.cache
+
+# 用户自定义临时文件
+temp/
+tmp/
