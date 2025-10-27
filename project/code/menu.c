@@ -121,13 +121,10 @@ static void menu_display_item(menu_unit_t *unit, uint8 line, uint8 selected, uin
     uint16 y = MENU_ITEM_START_Y + line * MENU_FONT_H;
     uint16 color = MENU_COLOR_TEXT;
 
-    // 清除该行 (使用水平线填充矩形)
-    for (uint16 i = y; i < y + MENU_FONT_H; i++)
-    {
-        ips114_draw_line(0, i, MENU_SCREEN_W - 1, i, MENU_COLOR_BG);
-    }
+    // 不再清除整行，直接覆盖绘制（提升性能）
+    // 背景会在ips114_show_string时自动使用背景色填充
 
-    // 显示选中标记
+    // 显示选中标记或清空标记位
     if (selected)
     {
         ips114_show_string(0, y, ">");
@@ -135,6 +132,10 @@ static void menu_display_item(menu_unit_t *unit, uint8 line, uint8 selected, uin
             color = MENU_COLOR_EDIT;    // 编辑模式用红色
         else
             color = MENU_COLOR_SELECT;  // 选中用蓝色
+    }
+    else
+    {
+        ips114_show_string(0, y, " ");  // 清空光标位置
     }
 
     // 显示名称
@@ -157,16 +158,14 @@ static void menu_display_cursor(uint8 line, uint8 show)
 
     uint16 y = MENU_ITEM_START_Y + line * MENU_FONT_H;
 
-    // 清除光标位置
-    for (uint16 i = y; i < y + MENU_FONT_H; i++)
-    {
-        ips114_draw_line(0, i, 8, i, MENU_COLOR_BG);  // 只清除光标位置(8像素宽)
-    }
-
-    // 显示光标
+    // 直接覆盖绘制，不画线
     if (show)
     {
         ips114_show_string(0, y, ">");
+    }
+    else
+    {
+        ips114_show_string(0, y, " ");  // 空格清除光标
     }
 }
 
@@ -659,29 +658,15 @@ uint8 menu_is_active(void)
 // ==================== 内置功能函数 ====================
 
 /**
- * @brief  在屏幕底部显示提示信息
+ * @brief  在屏幕底部显示提示信息（非阻塞版本）
  */
 static void menu_show_message(const char *msg)
 {
-    uint16 msg_y = MENU_SCREEN_H - MENU_FONT_H;  // 屏幕底部
+    // 直接在串口打印，不再屏幕显示（避免阻塞和刷新问题）
+    printf("[MENU] %s\r\n", msg);
 
-    // 清除底部一行
-    for (uint16 i = msg_y; i < MENU_SCREEN_H; i++)
-    {
-        ips114_draw_line(0, i, MENU_SCREEN_W - 1, i, MENU_COLOR_BG);
-    }
-
-    // 显示消息
-    ips114_show_string(0, msg_y, (char *)msg);
-
-    // 延时显示
-    system_delay_ms(1000);
-
-    // 清除消息
-    for (uint16 i = msg_y; i < MENU_SCREEN_H; i++)
-    {
-        ips114_draw_line(0, i, MENU_SCREEN_W - 1, i, MENU_COLOR_BG);
-    }
+    // 如果需要屏幕提示，可以在menu_refresh时显示状态栏
+    // 这里先简化，只用串口提示
 }
 
 /**
