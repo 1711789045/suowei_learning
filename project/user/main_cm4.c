@@ -37,6 +37,9 @@
 #include "menu.h"           // 菜单系统
 #include "key.h"            // 按键处理
 #include "flash.h"          // Flash配置管理
+#include "motor.h"          // 电机控制系统
+#include "encoder.h"        // 编码器模块
+#include "pid.h"            // PID控制模块
 
 // ���µĹ��̻��߹����ƶ���λ�����ִ�����²���
 // ��һ�� �ر��������д򿪵��ļ�
@@ -55,12 +58,17 @@ int main(void)
     debug_init();                       // ���Դ��ڳ�ʼ��
     // �˴���д�û����� ���������ʼ�������
 
+    // 初始化电机控制系统
+    motor_init();                       // 初始化电机PWM、编码器、PID
+    pit_ms_init(PIT_CH0, 10);           // 初始化10ms定时器中断
+
     // 初始化菜单系统
     menu_init();
     menu_example_create();
     menu_example_enter();               // 直接进入菜单
 
     printf("[MAIN] Menu system started\r\n");
+    printf("[MAIN] Motor control system started (10ms interrupt)\r\n");
 
 
 

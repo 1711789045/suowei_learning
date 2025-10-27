@@ -1,150 +1,149 @@
 /*********************************************************************************************************************
-* CYT2BL3 Opensourec Library ¼´£¨ CYT2BL3 ¿ªÔ´¿â£©ÊÇÒ»¸ö»ùÓÚ¹Ù·½ SDK ½Ó¿ÚµÄµÚÈý·½¿ªÔ´¿â
-* Copyright (c) 2022 SEEKFREE Öð·É¿Æ¼¼
+* CYT2BL3 Opensourec Library ï¿½ï¿½ï¿½ï¿½ CYT2BL3 ï¿½ï¿½Ô´ï¿½â£©ï¿½ï¿½Ò»ï¿½ï¿½ï¿½ï¿½ï¿½Ú¹Ù·ï¿½ SDK ï¿½Ó¿ÚµÄµï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ô´ï¿½ï¿½
+* Copyright (c) 2022 SEEKFREE ï¿½ï¿½É¿Æ¼ï¿½
 *
-* ±¾ÎÄ¼þÊÇ CYT2BL3 ¿ªÔ´¿âµÄÒ»²¿·Ö
+* ï¿½ï¿½ï¿½Ä¼ï¿½ï¿½ï¿½ CYT2BL3 ï¿½ï¿½Ô´ï¿½ï¿½ï¿½Ò»ï¿½ï¿½ï¿½ï¿½
 *
-* CYT2BL3 ¿ªÔ´¿â ÊÇÃâ·ÑÈí¼þ
-* Äú¿ÉÒÔ¸ù¾Ý×ÔÓÉÈí¼þ»ù½ð»á·¢²¼µÄ GPL£¨GNU General Public License£¬¼´ GNUÍ¨ÓÃ¹«¹²Ðí¿ÉÖ¤£©µÄÌõ¿î
-* ¼´ GPL µÄµÚ3°æ£¨¼´ GPL3.0£©»ò£¨ÄúÑ¡ÔñµÄ£©ÈÎºÎºóÀ´µÄ°æ±¾£¬ÖØÐÂ·¢²¼ºÍ/»òÐÞ¸ÄËü
+* CYT2BL3 ï¿½ï¿½Ô´ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+* ï¿½ï¿½ï¿½ï¿½ï¿½Ô¸ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½á·¢ï¿½ï¿½ï¿½ï¿½ GPLï¿½ï¿½GNU General Public Licenseï¿½ï¿½ï¿½ï¿½ GNUÍ¨ï¿½Ã¹ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ö¤ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+* ï¿½ï¿½ GPL ï¿½Äµï¿½3ï¿½æ£¨ï¿½ï¿½ GPL3.0ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ñ¡ï¿½ï¿½Ä£ï¿½ï¿½ÎºÎºï¿½ï¿½ï¿½ï¿½Ä°æ±¾ï¿½ï¿½ï¿½ï¿½ï¿½Â·ï¿½ï¿½ï¿½ï¿½ï¿½/ï¿½ï¿½ï¿½Þ¸ï¿½ï¿½ï¿½
 *
-* ±¾¿ªÔ´¿âµÄ·¢²¼ÊÇÏ£ÍûËüÄÜ·¢»Ó×÷ÓÃ£¬µ«²¢Î´¶ÔÆä×÷ÈÎºÎµÄ±£Ö¤
-* ÉõÖÁÃ»ÓÐÒþº¬µÄÊÊÏúÐÔ»òÊÊºÏÌØ¶¨ÓÃÍ¾µÄ±£Ö¤
-* ¸ü¶àÏ¸½ÚÇë²Î¼û GPL
+* ï¿½ï¿½ï¿½ï¿½Ô´ï¿½ï¿½Ä·ï¿½ï¿½ï¿½ï¿½ï¿½Ï£ï¿½ï¿½ï¿½ï¿½ï¿½Ü·ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ã£ï¿½ï¿½ï¿½ï¿½ï¿½Î´ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ÎºÎµÄ±ï¿½Ö¤
+* ï¿½ï¿½ï¿½ï¿½Ã»ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ô»ï¿½ï¿½Êºï¿½ï¿½Ø¶ï¿½ï¿½ï¿½Í¾ï¿½Ä±ï¿½Ö¤
+* ï¿½ï¿½ï¿½ï¿½Ï¸ï¿½ï¿½ï¿½ï¿½Î¼ï¿½ GPL
 *
-* ÄúÓ¦¸ÃÔÚÊÕµ½±¾¿ªÔ´¿âµÄÍ¬Ê±ÊÕµ½Ò»·Ý GPL µÄ¸±±¾
-* Èç¹ûÃ»ÓÐ£¬Çë²ÎÔÄ<https://www.gnu.org/licenses/>
+* ï¿½ï¿½Ó¦ï¿½ï¿½ï¿½ï¿½ï¿½Õµï¿½ï¿½ï¿½ï¿½ï¿½Ô´ï¿½ï¿½ï¿½Í¬Ê±ï¿½Õµï¿½Ò»ï¿½ï¿½ GPL ï¿½Ä¸ï¿½ï¿½ï¿½
+* ï¿½ï¿½ï¿½Ã»ï¿½Ð£ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½<https://www.gnu.org/licenses/>
 *
-* ¶îÍâ×¢Ã÷£º
-* ±¾¿ªÔ´¿âÊ¹ÓÃ GPL3.0 ¿ªÔ´Ðí¿ÉÖ¤Ð­Òé ÒÔÉÏÐí¿ÉÉêÃ÷ÎªÒëÎÄ°æ±¾
-* Ðí¿ÉÉêÃ÷Ó¢ÎÄ°æÔÚ libraries/doc ÎÄ¼þ¼ÐÏÂµÄ GPL3_permission_statement.txt ÎÄ¼þÖÐ
-* Ðí¿ÉÖ¤¸±±¾ÔÚ libraries ÎÄ¼þ¼ÐÏÂ ¼´¸ÃÎÄ¼þ¼ÐÏÂµÄ LICENSE ÎÄ¼þ
-* »¶Ó­¸÷Î»Ê¹ÓÃ²¢´«²¥±¾³ÌÐò µ«ÐÞ¸ÄÄÚÈÝÊ±±ØÐë±£ÁôÖð·É¿Æ¼¼µÄ°æÈ¨ÉùÃ÷£¨¼´±¾ÉùÃ÷£©
+* ï¿½ï¿½ï¿½ï¿½×¢ï¿½ï¿½ï¿½ï¿½
+* ï¿½ï¿½ï¿½ï¿½Ô´ï¿½ï¿½Ê¹ï¿½ï¿½ GPL3.0 ï¿½ï¿½Ô´ï¿½ï¿½ï¿½ï¿½Ö¤Ð­ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Îªï¿½ï¿½ï¿½Ä°æ±¾
+* ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ó¢ï¿½Ä°ï¿½ï¿½ï¿½ libraries/doc ï¿½Ä¼ï¿½ï¿½ï¿½ï¿½Âµï¿½ GPL3_permission_statement.txt ï¿½Ä¼ï¿½ï¿½ï¿½
+* ï¿½ï¿½ï¿½ï¿½Ö¤ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ libraries ï¿½Ä¼ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½Ä¼ï¿½ï¿½ï¿½ï¿½Âµï¿½ LICENSE ï¿½Ä¼ï¿½
+* ï¿½ï¿½Ó­ï¿½ï¿½Î»Ê¹ï¿½Ã²ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½Þ¸ï¿½ï¿½ï¿½ï¿½ï¿½Ê±ï¿½ï¿½ï¿½ë±£ï¿½ï¿½ï¿½ï¿½É¿Æ¼ï¿½ï¿½Ä°ï¿½È¨ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 *
-* ÎÄ¼þÃû³Æ          cm4_isr
-* ¹«Ë¾Ãû³Æ          ³É¶¼Öð·É¿Æ¼¼ÓÐÏÞ¹«Ë¾
-* °æ±¾ÐÅÏ¢          ²é¿´ libraries/doc ÎÄ¼þ¼ÐÄÚ version ÎÄ¼þ °æ±¾ËµÃ÷
-* ¿ª·¢»·¾³          IAR 9.40.1
-* ÊÊÓÃÆ½Ì¨          CYT2BL3
-* µêÆÌÁ´½Ó          https://seekfree.taobao.com/
+* ï¿½Ä¼ï¿½ï¿½ï¿½ï¿½ï¿½          cm4_isr
+* ï¿½ï¿½Ë¾ï¿½ï¿½ï¿½ï¿½          ï¿½É¶ï¿½ï¿½ï¿½É¿Æ¼ï¿½ï¿½ï¿½ï¿½Þ¹ï¿½Ë¾
+* ï¿½æ±¾ï¿½ï¿½Ï¢          ï¿½é¿´ libraries/doc ï¿½Ä¼ï¿½ï¿½ï¿½ï¿½ï¿½ version ï¿½Ä¼ï¿½ ï¿½æ±¾Ëµï¿½ï¿½
+* ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½          IAR 9.40.1
+* ï¿½ï¿½ï¿½ï¿½Æ½Ì¨          CYT2BL3
+* ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½          https://seekfree.taobao.com/
 *
-* ÐÞ¸Ä¼ÇÂ¼
-* ÈÕÆÚ              ×÷Õß                ±¸×¢
+* ï¿½Þ¸Ä¼ï¿½Â¼
+* ï¿½ï¿½ï¿½ï¿½              ï¿½ï¿½ï¿½ï¿½                ï¿½ï¿½×¢
 * 2024-1-9      pudding            first version
-* 2024-5-14     pudding            ÐÂÔö12¸öpitÖÜÆÚÖÐ¶Ï Ôö¼Ó²¿·Ö×¢ÊÍËµÃ÷
+* 2024-5-14     pudding            ï¿½ï¿½ï¿½ï¿½12ï¿½ï¿½pitï¿½ï¿½ï¿½ï¿½ï¿½Ð¶ï¿½ ï¿½ï¿½ï¿½Ó²ï¿½ï¿½ï¿½×¢ï¿½ï¿½Ëµï¿½ï¿½
 ********************************************************************************************************************/
 
 #include "zf_common_headfile.h"
+#include "motor.h"          // ç”µæœºæŽ§åˆ¶æ¨¡å—
 
-// **************************** PITÖÐ¶Ïº¯Êý ****************************
-void pit0_ch0_isr()                     // ¶¨Ê±Æ÷Í¨µÀ 0 ÖÜÆÚÖÐ¶Ï·þÎñº¯Êý      
+// **************************** PITï¿½Ð¶Ïºï¿½ï¿½ï¿½ ****************************
+void pit0_ch0_isr()                     // ï¿½ï¿½Ê±ï¿½ï¿½Í¨ï¿½ï¿½ 0 ï¿½ï¿½ï¿½ï¿½ï¿½Ð¶Ï·ï¿½ï¿½ï¿½ï¿½ï¿½
 {
-    pit_isr_flag_clear(PIT_CH0);
-  
-    tsl1401_collect_pit_handler();
-      
-    
+    pit_isr_flag_clear(PIT_CH0);        // æ¸…é™¤ä¸­æ–­æ ‡å¿—
+
+    motor_process();                     // 10msç”µæœºæŽ§åˆ¶å‘¨æœŸ
 }
 
-void pit0_ch1_isr()                     // ¶¨Ê±Æ÷Í¨µÀ 1 ÖÜÆÚÖÐ¶Ï·þÎñº¯Êý      
+void pit0_ch1_isr()                     // ï¿½ï¿½Ê±ï¿½ï¿½Í¨ï¿½ï¿½ 1 ï¿½ï¿½ï¿½ï¿½ï¿½Ð¶Ï·ï¿½ï¿½ï¿½ï¿½ï¿½      
 {
     pit_isr_flag_clear(PIT_CH1);
     
 }
 
-void pit0_ch2_isr()                     // ¶¨Ê±Æ÷Í¨µÀ 2 ÖÜÆÚÖÐ¶Ï·þÎñº¯Êý      
+void pit0_ch2_isr()                     // ï¿½ï¿½Ê±ï¿½ï¿½Í¨ï¿½ï¿½ 2 ï¿½ï¿½ï¿½ï¿½ï¿½Ð¶Ï·ï¿½ï¿½ï¿½ï¿½ï¿½      
 {
     pit_isr_flag_clear(PIT_CH2);
     
 }
 
-void pit0_ch10_isr()                    // ¶¨Ê±Æ÷Í¨µÀ 10 ÖÜÆÚÖÐ¶Ï·þÎñº¯Êý      
+void pit0_ch10_isr()                    // ï¿½ï¿½Ê±ï¿½ï¿½Í¨ï¿½ï¿½ 10 ï¿½ï¿½ï¿½ï¿½ï¿½Ð¶Ï·ï¿½ï¿½ï¿½ï¿½ï¿½      
 {
     pit_isr_flag_clear(PIT_CH10);
     
 }
 
-void pit0_ch11_isr()                    // ¶¨Ê±Æ÷Í¨µÀ 11 ÖÜÆÚÖÐ¶Ï·þÎñº¯Êý      
+void pit0_ch11_isr()                    // ï¿½ï¿½Ê±ï¿½ï¿½Í¨ï¿½ï¿½ 11 ï¿½ï¿½ï¿½ï¿½ï¿½Ð¶Ï·ï¿½ï¿½ï¿½ï¿½ï¿½      
 {
     pit_isr_flag_clear(PIT_CH11);
     
 }
 
-void pit0_ch12_isr()                    // ¶¨Ê±Æ÷Í¨µÀ 12 ÖÜÆÚÖÐ¶Ï·þÎñº¯Êý      
+void pit0_ch12_isr()                    // ï¿½ï¿½Ê±ï¿½ï¿½Í¨ï¿½ï¿½ 12 ï¿½ï¿½ï¿½ï¿½ï¿½Ð¶Ï·ï¿½ï¿½ï¿½ï¿½ï¿½      
 {
     pit_isr_flag_clear(PIT_CH12);
     
 }
 
-void pit0_ch13_isr()                    // ¶¨Ê±Æ÷Í¨µÀ 13 ÖÜÆÚÖÐ¶Ï·þÎñº¯Êý      
+void pit0_ch13_isr()                    // ï¿½ï¿½Ê±ï¿½ï¿½Í¨ï¿½ï¿½ 13 ï¿½ï¿½ï¿½ï¿½ï¿½Ð¶Ï·ï¿½ï¿½ï¿½ï¿½ï¿½      
 {
     pit_isr_flag_clear(PIT_CH13);
     
 }
 
-void pit0_ch14_isr()                    // ¶¨Ê±Æ÷Í¨µÀ 14 ÖÜÆÚÖÐ¶Ï·þÎñº¯Êý      
+void pit0_ch14_isr()                    // ï¿½ï¿½Ê±ï¿½ï¿½Í¨ï¿½ï¿½ 14 ï¿½ï¿½ï¿½ï¿½ï¿½Ð¶Ï·ï¿½ï¿½ï¿½ï¿½ï¿½      
 {
     pit_isr_flag_clear(PIT_CH14);
     
 }
 
-void pit0_ch15_isr()                    // ¶¨Ê±Æ÷Í¨µÀ 15 ÖÜÆÚÖÐ¶Ï·þÎñº¯Êý      
+void pit0_ch15_isr()                    // ï¿½ï¿½Ê±ï¿½ï¿½Í¨ï¿½ï¿½ 15 ï¿½ï¿½ï¿½ï¿½ï¿½Ð¶Ï·ï¿½ï¿½ï¿½ï¿½ï¿½      
 {
     pit_isr_flag_clear(PIT_CH15);
     
 }
 
-void pit0_ch16_isr()                    // ¶¨Ê±Æ÷Í¨µÀ 16 ÖÜÆÚÖÐ¶Ï·þÎñº¯Êý      
+void pit0_ch16_isr()                    // ï¿½ï¿½Ê±ï¿½ï¿½Í¨ï¿½ï¿½ 16 ï¿½ï¿½ï¿½ï¿½ï¿½Ð¶Ï·ï¿½ï¿½ï¿½ï¿½ï¿½      
 {
     pit_isr_flag_clear(PIT_CH16);
     
 }
 
-void pit0_ch17_isr()                    // ¶¨Ê±Æ÷Í¨µÀ 17 ÖÜÆÚÖÐ¶Ï·þÎñº¯Êý      
+void pit0_ch17_isr()                    // ï¿½ï¿½Ê±ï¿½ï¿½Í¨ï¿½ï¿½ 17 ï¿½ï¿½ï¿½ï¿½ï¿½Ð¶Ï·ï¿½ï¿½ï¿½ï¿½ï¿½      
 {
     pit_isr_flag_clear(PIT_CH17);
     
 }
 
-void pit0_ch18_isr()                    // ¶¨Ê±Æ÷Í¨µÀ 18 ÖÜÆÚÖÐ¶Ï·þÎñº¯Êý      
+void pit0_ch18_isr()                    // ï¿½ï¿½Ê±ï¿½ï¿½Í¨ï¿½ï¿½ 18 ï¿½ï¿½ï¿½ï¿½ï¿½Ð¶Ï·ï¿½ï¿½ï¿½ï¿½ï¿½      
 {
     pit_isr_flag_clear(PIT_CH18);
     
 }
 
-void pit0_ch19_isr()                    // ¶¨Ê±Æ÷Í¨µÀ 19 ÖÜÆÚÖÐ¶Ï·þÎñº¯Êý      
+void pit0_ch19_isr()                    // ï¿½ï¿½Ê±ï¿½ï¿½Í¨ï¿½ï¿½ 19 ï¿½ï¿½ï¿½ï¿½ï¿½Ð¶Ï·ï¿½ï¿½ï¿½ï¿½ï¿½      
 {
     pit_isr_flag_clear(PIT_CH19);
     
 }
 
-void pit0_ch20_isr()                    // ¶¨Ê±Æ÷Í¨µÀ 20 ÖÜÆÚÖÐ¶Ï·þÎñº¯Êý      
+void pit0_ch20_isr()                    // ï¿½ï¿½Ê±ï¿½ï¿½Í¨ï¿½ï¿½ 20 ï¿½ï¿½ï¿½ï¿½ï¿½Ð¶Ï·ï¿½ï¿½ï¿½ï¿½ï¿½      
 {
     pit_isr_flag_clear(PIT_CH20);
     
 }
 
-void pit0_ch21_isr()                    // ¶¨Ê±Æ÷Í¨µÀ 21 ÖÜÆÚÖÐ¶Ï·þÎñº¯Êý      
+void pit0_ch21_isr()                    // ï¿½ï¿½Ê±ï¿½ï¿½Í¨ï¿½ï¿½ 21 ï¿½ï¿½ï¿½ï¿½ï¿½Ð¶Ï·ï¿½ï¿½ï¿½ï¿½ï¿½      
 {
     pit_isr_flag_clear(PIT_CH21);
     
 }
-// **************************** PITÖÐ¶Ïº¯Êý ****************************
+// **************************** PITï¿½Ð¶Ïºï¿½ï¿½ï¿½ ****************************
 
 
-// **************************** ´®¿ÚÖÐ¶Ïº¯Êý ****************************
-// ´®¿Ú0Ä¬ÈÏ×÷Îªµ÷ÊÔ´®¿Ú
+// **************************** ï¿½ï¿½ï¿½ï¿½ï¿½Ð¶Ïºï¿½ï¿½ï¿½ ****************************
+// ï¿½ï¿½ï¿½ï¿½0Ä¬ï¿½ï¿½ï¿½ï¿½Îªï¿½ï¿½ï¿½Ô´ï¿½ï¿½ï¿½
 void uart0_isr (void)
 {
-    if(uart_isr_mask(UART_0))            // ´®¿Ú0½ÓÊÕÖÐ¶Ï
+    if(uart_isr_mask(UART_0))            // ï¿½ï¿½ï¿½ï¿½0ï¿½ï¿½ï¿½ï¿½ï¿½Ð¶ï¿½
     {
         
-#if DEBUG_UART_USE_INTERRUPT             // Èç¹û¿ªÆô debug ´®¿ÚÖÐ¶Ï
-        debug_interrupr_handler();       // µ÷ÓÃ debug ´®¿Ú½ÓÊÕ´¦Àíº¯Êý Êý¾Ý»á±» debug »·ÐÎ»º³åÇø¶ÁÈ¡
-#endif                                   // Èç¹ûÐÞ¸ÄÁË DEBUG_UART_INDEX ÄÇÕâ¶Î´úÂëÐèÒª·Åµ½¶ÔÓ¦µÄ´®¿ÚÖÐ¶ÏÈ¥
+#if DEBUG_UART_USE_INTERRUPT             // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ debug ï¿½ï¿½ï¿½ï¿½ï¿½Ð¶ï¿½
+        debug_interrupr_handler();       // ï¿½ï¿½ï¿½ï¿½ debug ï¿½ï¿½ï¿½Ú½ï¿½ï¿½Õ´ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½Ý»á±» debug ï¿½ï¿½ï¿½Î»ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½È¡
+#endif                                   // ï¿½ï¿½ï¿½ï¿½Þ¸ï¿½ï¿½ï¿½ DEBUG_UART_INDEX ï¿½ï¿½ï¿½ï¿½Î´ï¿½ï¿½ï¿½ï¿½ï¿½Òªï¿½Åµï¿½ï¿½ï¿½Ó¦ï¿½Ä´ï¿½ï¿½ï¿½ï¿½Ð¶ï¿½È¥
       
     }
-    else                                 // ´®¿Ú0·¢ËÍÖÐ¶Ï
+    else                                 // ï¿½ï¿½ï¿½ï¿½0ï¿½ï¿½ï¿½ï¿½ï¿½Ð¶ï¿½
     {           
         
         
@@ -154,14 +153,14 @@ void uart0_isr (void)
 
 void uart1_isr (void)
 {
-    if(uart_isr_mask(UART_1))            // ´®¿Ú1½ÓÊÕÖÐ¶Ï
+    if(uart_isr_mask(UART_1))            // ï¿½ï¿½ï¿½ï¿½1ï¿½ï¿½ï¿½ï¿½ï¿½Ð¶ï¿½
     {
         
         
       
       
     }
-    else                                // ´®¿Ú1·¢ËÍÖÐ¶Ï
+    else                                // ï¿½ï¿½ï¿½ï¿½1ï¿½ï¿½ï¿½ï¿½ï¿½Ð¶ï¿½
     {
       
         
@@ -172,14 +171,14 @@ void uart1_isr (void)
 
 void uart2_isr (void)
 {
-    if(uart_isr_mask(UART_2))            // ´®¿Ú2½ÓÊÕÖÐ¶Ï
+    if(uart_isr_mask(UART_2))            // ï¿½ï¿½ï¿½ï¿½2ï¿½ï¿½ï¿½ï¿½ï¿½Ð¶ï¿½
     {
         
       
         
         
     }
-    else                                // ´®¿Ú2·¢ËÍÖÐ¶Ï
+    else                                // ï¿½ï¿½ï¿½ï¿½2ï¿½ï¿½ï¿½ï¿½ï¿½Ð¶ï¿½
     {
         
         
@@ -190,14 +189,14 @@ void uart2_isr (void)
 
 void uart3_isr (void)
 {
-    if(uart_isr_mask(UART_3))            // ´®¿Ú3½ÓÊÕÖÐ¶Ï
+    if(uart_isr_mask(UART_3))            // ï¿½ï¿½ï¿½ï¿½3ï¿½ï¿½ï¿½ï¿½ï¿½Ð¶ï¿½
     {
         
 
         
         
     }
-    else                                // ´®¿Ú3·¢ËÍÖÐ¶Ï
+    else                                // ï¿½ï¿½ï¿½ï¿½3ï¿½ï¿½ï¿½ï¿½ï¿½Ð¶ï¿½
     {
       
         
@@ -209,14 +208,14 @@ void uart3_isr (void)
 void uart4_isr (void)
 {
     
-    if(uart_isr_mask(UART_4))            // ´®¿Ú4½ÓÊÕÖÐ¶Ï
+    if(uart_isr_mask(UART_4))            // ï¿½ï¿½ï¿½ï¿½4ï¿½ï¿½ï¿½ï¿½ï¿½Ð¶ï¿½
     {
         
 
         
        
     }
-    else                                // ´®¿Ú4·¢ËÍÖÐ¶Ï
+    else                                // ï¿½ï¿½ï¿½ï¿½4ï¿½ï¿½ï¿½ï¿½ï¿½Ð¶ï¿½
     {
       
         
@@ -228,14 +227,14 @@ void uart4_isr (void)
 void uart5_isr (void)
 {
     
-    if(uart_isr_mask(UART_5))            // ´®¿Ú5½ÓÊÕÖÐ¶Ï
+    if(uart_isr_mask(UART_5))            // ï¿½ï¿½ï¿½ï¿½5ï¿½ï¿½ï¿½ï¿½ï¿½Ð¶ï¿½
     {
         
 
         
        
     }
-    else                                // ´®¿Ú5·¢ËÍÖÐ¶Ï
+    else                                // ï¿½ï¿½ï¿½ï¿½5ï¿½ï¿½ï¿½ï¿½ï¿½Ð¶ï¿½
     {
       
         
@@ -247,14 +246,14 @@ void uart5_isr (void)
 void uart6_isr (void)
 {
     
-    if(uart_isr_mask(UART_6))            // ´®¿Ú6½ÓÊÕÖÐ¶Ï
+    if(uart_isr_mask(UART_6))            // ï¿½ï¿½ï¿½ï¿½6ï¿½ï¿½ï¿½ï¿½ï¿½Ð¶ï¿½
     {
         
 
         
        
     }
-    else                                // ´®¿Ú6·¢ËÍÖÐ¶Ï
+    else                                // ï¿½ï¿½ï¿½ï¿½6ï¿½ï¿½ï¿½ï¿½ï¿½Ð¶ï¿½
     {
       
         
@@ -262,17 +261,17 @@ void uart6_isr (void)
         
     }
 }
-// **************************** Íâ²¿ÖÐ¶Ïº¯Êý ****************************
-void gpio_0_exti_isr()                  // Íâ²¿ GPIO_0 ÖÐ¶Ï·þÎñº¯Êý     
+// **************************** ï¿½â²¿ï¿½Ð¶Ïºï¿½ï¿½ï¿½ ****************************
+void gpio_0_exti_isr()                  // ï¿½â²¿ GPIO_0 ï¿½Ð¶Ï·ï¿½ï¿½ï¿½ï¿½ï¿½     
 {
     
   
   
 }
 
-void gpio_1_exti_isr()                  // Íâ²¿ GPIO_1 ÖÐ¶Ï·þÎñº¯Êý     
+void gpio_1_exti_isr()                  // ï¿½â²¿ GPIO_1 ï¿½Ð¶Ï·ï¿½ï¿½ï¿½ï¿½ï¿½     
 {
-    if(exti_flag_get(P01_0))		// Ê¾ÀýP1_0¶Ë¿ÚÍâ²¿ÖÐ¶ÏÅÐ¶Ï
+    if(exti_flag_get(P01_0))		// Ê¾ï¿½ï¿½P1_0ï¿½Ë¿ï¿½ï¿½â²¿ï¿½Ð¶ï¿½ï¿½Ð¶ï¿½
     {
 
       
@@ -287,7 +286,7 @@ void gpio_1_exti_isr()                  // Íâ²¿ GPIO_1 ÖÐ¶Ï·þÎñº¯Êý
     }
 }
 
-void gpio_2_exti_isr()                  // Íâ²¿ GPIO_2 ÖÐ¶Ï·þÎñº¯Êý     
+void gpio_2_exti_isr()                  // ï¿½â²¿ GPIO_2 ï¿½Ð¶Ï·ï¿½ï¿½ï¿½ï¿½ï¿½     
 {
     if(exti_flag_get(P02_0))
     {
@@ -302,150 +301,150 @@ void gpio_2_exti_isr()                  // Íâ²¿ GPIO_2 ÖÐ¶Ï·þÎñº¯Êý
 
 }
 
-void gpio_3_exti_isr()                  // Íâ²¿ GPIO_3 ÖÐ¶Ï·þÎñº¯Êý     
+void gpio_3_exti_isr()                  // ï¿½â²¿ GPIO_3 ï¿½Ð¶Ï·ï¿½ï¿½ï¿½ï¿½ï¿½     
 {
 
 
 
 }
 
-void gpio_4_exti_isr()                  // Íâ²¿ GPIO_4 ÖÐ¶Ï·þÎñº¯Êý     
+void gpio_4_exti_isr()                  // ï¿½â²¿ GPIO_4 ï¿½Ð¶Ï·ï¿½ï¿½ï¿½ï¿½ï¿½     
 {
 
 
 
 }
 
-void gpio_5_exti_isr()                  // Íâ²¿ GPIO_5 ÖÐ¶Ï·þÎñº¯Êý     
+void gpio_5_exti_isr()                  // ï¿½â²¿ GPIO_5 ï¿½Ð¶Ï·ï¿½ï¿½ï¿½ï¿½ï¿½     
 {
 
 
 
 }
 
-void gpio_6_exti_isr()                  // Íâ²¿ GPIO_6 ÖÐ¶Ï·þÎñº¯Êý     
+void gpio_6_exti_isr()                  // ï¿½â²¿ GPIO_6 ï¿½Ð¶Ï·ï¿½ï¿½ï¿½ï¿½ï¿½     
 {
 	
 
 
 }
 
-void gpio_7_exti_isr()                  // Íâ²¿ GPIO_7 ÖÐ¶Ï·þÎñº¯Êý     
+void gpio_7_exti_isr()                  // ï¿½â²¿ GPIO_7 ï¿½Ð¶Ï·ï¿½ï¿½ï¿½ï¿½ï¿½     
 {
 
 
 
 }
 
-void gpio_8_exti_isr()                  // Íâ²¿ GPIO_8 ÖÐ¶Ï·þÎñº¯Êý     
+void gpio_8_exti_isr()                  // ï¿½â²¿ GPIO_8 ï¿½Ð¶Ï·ï¿½ï¿½ï¿½ï¿½ï¿½     
 {
     
 
 
 }
 
-void gpio_9_exti_isr()                  // Íâ²¿ GPIO_9 ÖÐ¶Ï·þÎñº¯Êý     
+void gpio_9_exti_isr()                  // ï¿½â²¿ GPIO_9 ï¿½Ð¶Ï·ï¿½ï¿½ï¿½ï¿½ï¿½     
 {
 
 
 
 }
 
-void gpio_10_exti_isr()                  // Íâ²¿ GPIO_10 ÖÐ¶Ï·þÎñº¯Êý     
+void gpio_10_exti_isr()                  // ï¿½â²¿ GPIO_10 ï¿½Ð¶Ï·ï¿½ï¿½ï¿½ï¿½ï¿½     
 {
 
 
 
 }
 
-void gpio_11_exti_isr()                  // Íâ²¿ GPIO_11 ÖÐ¶Ï·þÎñº¯Êý     
+void gpio_11_exti_isr()                  // ï¿½â²¿ GPIO_11 ï¿½Ð¶Ï·ï¿½ï¿½ï¿½ï¿½ï¿½     
 {
 
 
 
 }
 
-void gpio_12_exti_isr()                  // Íâ²¿ GPIO_12 ÖÐ¶Ï·þÎñº¯Êý     
+void gpio_12_exti_isr()                  // ï¿½â²¿ GPIO_12 ï¿½Ð¶Ï·ï¿½ï¿½ï¿½ï¿½ï¿½     
 {
 
 
 
 }
 
-void gpio_13_exti_isr()                  // Íâ²¿ GPIO_13 ÖÐ¶Ï·þÎñº¯Êý     
+void gpio_13_exti_isr()                  // ï¿½â²¿ GPIO_13 ï¿½Ð¶Ï·ï¿½ï¿½ï¿½ï¿½ï¿½     
 {
 
 
 
 }
 
-void gpio_14_exti_isr()                  // Íâ²¿ GPIO_14 ÖÐ¶Ï·þÎñº¯Êý     
+void gpio_14_exti_isr()                  // ï¿½â²¿ GPIO_14 ï¿½Ð¶Ï·ï¿½ï¿½ï¿½ï¿½ï¿½     
 {
 
 
 
 }
 
-void gpio_15_exti_isr()                  // Íâ²¿ GPIO_15 ÖÐ¶Ï·þÎñº¯Êý     
+void gpio_15_exti_isr()                  // ï¿½â²¿ GPIO_15 ï¿½Ð¶Ï·ï¿½ï¿½ï¿½ï¿½ï¿½     
 {
 
 
 
 }
 
-void gpio_16_exti_isr()                  // Íâ²¿ GPIO_16 ÖÐ¶Ï·þÎñº¯Êý     
+void gpio_16_exti_isr()                  // ï¿½â²¿ GPIO_16 ï¿½Ð¶Ï·ï¿½ï¿½ï¿½ï¿½ï¿½     
 {
 
 
 
 }
 
-void gpio_17_exti_isr()                  // Íâ²¿ GPIO_17 ÖÐ¶Ï·þÎñº¯Êý     
+void gpio_17_exti_isr()                  // ï¿½â²¿ GPIO_17 ï¿½Ð¶Ï·ï¿½ï¿½ï¿½ï¿½ï¿½     
 {
 
 
 
 }
 
-void gpio_18_exti_isr()                  // Íâ²¿ GPIO_18 ÖÐ¶Ï·þÎñº¯Êý     
+void gpio_18_exti_isr()                  // ï¿½â²¿ GPIO_18 ï¿½Ð¶Ï·ï¿½ï¿½ï¿½ï¿½ï¿½     
 {
 
 
 
 }
 
-void gpio_19_exti_isr()                  // Íâ²¿ GPIO_19 ÖÐ¶Ï·þÎñº¯Êý     
+void gpio_19_exti_isr()                  // ï¿½â²¿ GPIO_19 ï¿½Ð¶Ï·ï¿½ï¿½ï¿½ï¿½ï¿½     
 {
 
 
 
 }
 
-void gpio_20_exti_isr()                  // Íâ²¿ GPIO_20 ÖÐ¶Ï·þÎñº¯Êý     
+void gpio_20_exti_isr()                  // ï¿½â²¿ GPIO_20 ï¿½Ð¶Ï·ï¿½ï¿½ï¿½ï¿½ï¿½     
 {
 
 
 
 }
 
-void gpio_21_exti_isr()                  // Íâ²¿ GPIO_21 ÖÐ¶Ï·þÎñº¯Êý     
+void gpio_21_exti_isr()                  // ï¿½â²¿ GPIO_21 ï¿½Ð¶Ï·ï¿½ï¿½ï¿½ï¿½ï¿½     
 {
 
 
 
 }
 
-void gpio_22_exti_isr()                  // Íâ²¿ GPIO_22 ÖÐ¶Ï·þÎñº¯Êý     
+void gpio_22_exti_isr()                  // ï¿½â²¿ GPIO_22 ï¿½Ð¶Ï·ï¿½ï¿½ï¿½ï¿½ï¿½     
 {
 
 
 
 }
 
-void gpio_23_exti_isr()                  // Íâ²¿ GPIO_23 ÖÐ¶Ï·þÎñº¯Êý     
+void gpio_23_exti_isr()                  // ï¿½â²¿ GPIO_23 ï¿½Ð¶Ï·ï¿½ï¿½ï¿½ï¿½ï¿½     
 {
 
 
 
 }
-// **************************** Íâ²¿ÖÐ¶Ïº¯Êý ****************************
+// **************************** ï¿½â²¿ï¿½Ð¶Ïºï¿½ï¿½ï¿½ ****************************

@@ -34,6 +34,8 @@
 ********************************************************************************************************************/
 
 #include "menu.h"
+#include "pid.h"            // PID参数（motor_kp/ki/kd）
+#include "motor.h"          // 电机控制（VOFA+开关）
 #include <string.h>
 #include <stdio.h>
 
@@ -783,6 +785,15 @@ void menu_func_test(void)
     // TODO: 实现测试功能
 }
 
+/**
+ * @brief  VOFA+调试开关（功能函数-已废弃，改用参数方式）
+ */
+void menu_func_vofa_toggle(void)
+{
+    motor_vofa_enable = !motor_vofa_enable;
+    printf("[DEBUG] VOFA+ %s\r\n", motor_vofa_enable ? "ON" : "OFF");
+}
+
 // ==================== 菜单示例 ====================
 
 // 舵机参数
@@ -791,10 +802,8 @@ static float servo_left_max = 1800.0f;
 static float servo_right_max = 1200.0f;
 static float servo_kp = 1.0f;
 
-// 电机参数
-static float motor_speed = 100.0f;
-static float motor_kp = 5.0f;
-static float motor_ki = 0.5f;
+// 电机参数使用pid.h中的全局变量: motor_kp, motor_ki, motor_kd
+// VOFA+开关使用motor.h中的全局变量: motor_vofa_enable
 
 // 图像参数
 static uint16 image_threshold = 128;
@@ -815,9 +824,10 @@ void menu_example_create(void)
     config_register_item("servo_right_max", &servo_right_max, CONFIG_TYPE_FLOAT, &servo_right_max, "Servo Right Max");
     config_register_item("servo_kp", &servo_kp, CONFIG_TYPE_FLOAT, &servo_kp, "Servo Kp");
 
-    config_register_item("motor_speed", &motor_speed, CONFIG_TYPE_FLOAT, &motor_speed, "Motor Speed");
     config_register_item("motor_kp", &motor_kp, CONFIG_TYPE_FLOAT, &motor_kp, "Motor Kp");
     config_register_item("motor_ki", &motor_ki, CONFIG_TYPE_FLOAT, &motor_ki, "Motor Ki");
+    config_register_item("motor_kd", &motor_kd, CONFIG_TYPE_FLOAT, &motor_kd, "Motor Kd");
+    config_register_item("motor_vofa_enable", &motor_vofa_enable, CONFIG_TYPE_UINT8, &motor_vofa_enable, "VOFA Enable");
 
     config_register_item("image_threshold", &image_threshold, CONFIG_TYPE_UINT16, &image_threshold, "Image Threshold");
     config_register_item("image_exposure", &image_exposure, CONFIG_TYPE_UINT16, &image_exposure, "Image Exposure");
@@ -844,9 +854,9 @@ void menu_example_create(void)
     menu_unit_t *servo_param4 = menu_create_param("servo_kp", &servo_kp, CONFIG_TYPE_FLOAT, 0.1f, 2, 1);
 
     // ========== Motor三级参数 ==========
-    menu_unit_t *motor_param1 = menu_create_param("motor_speed", &motor_speed, CONFIG_TYPE_FLOAT, 5.0f, 3, 1);
-    menu_unit_t *motor_param2 = menu_create_param("motor_kp", &motor_kp, CONFIG_TYPE_FLOAT, 0.1f, 2, 2);
-    menu_unit_t *motor_param3 = menu_create_param("motor_ki", &motor_ki, CONFIG_TYPE_FLOAT, 0.1f, 2, 2);
+    menu_unit_t *motor_param1 = menu_create_param("motor_kp", &motor_kp, CONFIG_TYPE_FLOAT, 0.1f, 2, 2);
+    menu_unit_t *motor_param2 = menu_create_param("motor_ki", &motor_ki, CONFIG_TYPE_FLOAT, 0.1f, 2, 2);
+    menu_unit_t *motor_param3 = menu_create_param("motor_kd", &motor_kd, CONFIG_TYPE_FLOAT, 0.1f, 2, 2);
 
     // ========== Image三级参数 ==========
     menu_unit_t *image_param1 = menu_create_param("threshold", &image_threshold, CONFIG_TYPE_UINT16, 5.0f, 3, 0);
@@ -868,6 +878,7 @@ void menu_example_create(void)
     // ========== Debug二级菜单 ==========
     menu_unit_t *debug_show_image = menu_create_function("Show Image", menu_func_show_image);
     menu_unit_t *debug_test = menu_create_function("Test Function", menu_func_test);
+    menu_unit_t *debug_vofa = menu_create_param("VOFA Debug", &motor_vofa_enable, CONFIG_TYPE_UINT8, 1.0f, 0, 0);
 
     // ==================== 链接菜单 ====================
 
@@ -913,8 +924,9 @@ void menu_example_create(void)
     menu_link(load_slot4, load_slot3, load_slot1, NULL, load_config);        // 循环
 
     // Debug二级菜单链接（循环）
-    menu_link(debug_show_image, debug_test, debug_test, NULL, debug);        // 循环
-    menu_link(debug_test, debug_show_image, debug_show_image, NULL, debug);  // 循环
+    menu_link(debug_show_image, debug_vofa, debug_test, NULL, debug);        // 循环
+    menu_link(debug_test, debug_show_image, debug_vofa, NULL, debug);
+    menu_link(debug_vofa, debug_test, debug_show_image, NULL, debug);        // 循环
 
     printf("[MENU_EXAMPLE] Three-level menu created\r\n");
 }
