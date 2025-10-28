@@ -262,8 +262,9 @@ static void menu_navigate_up(void)
     if (total_items == 0)
         return;
 
-    // 保存旧的光标位置
+    // 保存旧的光标位置和旧的菜单单元
     uint8 old_line = current_line;
+    menu_unit_t *old_unit = current_unit;
 
     // 向上移动光标（循环）
     if (current_line == 0)
@@ -285,9 +286,9 @@ static void menu_navigate_up(void)
             current_unit = current_unit->down;
     }
 
-    // 只刷新光标位置（局部刷新）
-    menu_display_cursor(old_line, 0);       // 清除旧光标
-    menu_display_cursor(current_line, 1);   // 显示新光标
+    // 刷新颜色：旧位置恢复白色，新位置变绿色
+    menu_display_item(old_unit, old_line, 0, 0);        // 旧位置恢复为未选中状态（白色）
+    menu_display_item(current_unit, current_line, 1, 0); // 新位置显示为选中状态（绿色）
 }
 
 /**
@@ -312,8 +313,9 @@ static void menu_navigate_down(void)
     if (total_items == 0)
         return;
 
-    // 保存旧的光标位置
+    // 保存旧的光标位置和旧的菜单单元
     uint8 old_line = current_line;
+    menu_unit_t *old_unit = current_unit;
 
     // 向下移动光标（循环）
     uint8 max_line = (total_items > MENU_ITEMS_PER_PAGE) ? (MENU_ITEMS_PER_PAGE - 1) : (total_items - 1);
@@ -336,9 +338,9 @@ static void menu_navigate_down(void)
             current_unit = current_unit->down;
     }
 
-    // 只刷新光标位置（局部刷新）
-    menu_display_cursor(old_line, 0);       // 清除旧光标
-    menu_display_cursor(current_line, 1);   // 显示新光标
+    // 刷新颜色：旧位置恢复白色，新位置变绿色
+    menu_display_item(old_unit, old_line, 0, 0);        // 旧位置恢复为未选中状态（白色）
+    menu_display_item(current_unit, current_line, 1, 0); // 新位置显示为选中状态（绿色）
 }
 
 /**

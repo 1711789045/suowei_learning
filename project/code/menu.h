@@ -51,8 +51,8 @@
 // 颜色定义
 #define MENU_COLOR_BG           RGB565_BLACK    // 背景色
 #define MENU_COLOR_TEXT         RGB565_WHITE    // 文本颜色
-#define MENU_COLOR_SELECT       RGB565_BLUE     // 选中项颜色
-#define MENU_COLOR_EDIT         RGB565_RED      // 编辑模式颜色
+#define MENU_COLOR_SELECT       RGB565_GREEN    // 选中项颜色（绿色）
+#define MENU_COLOR_EDIT         RGB565_YELLOW   // 编辑模式颜色（黄色）
 
 // ==================== 菜单配置 ====================
 #define MENU_MAX_UNITS      100         // 最大菜单单元数量
