@@ -69,8 +69,8 @@ int main(void)
     menu_init();
     menu_example_create();              // 创建菜单（会注册配置项）
 
-    // 加载配置（必须在注册配置项之后）
-    config_load_slot(CONFIG_DEFAULT_SLOT);
+    // 自动加载配置（掉电不丢失，从Page 4加载）
+    config_auto_load();
 
     // 进入菜单
     menu_example_enter();               // 直接进入菜单

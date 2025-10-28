@@ -41,10 +41,10 @@
 // ==================== 配置参数 ====================
 #define CONFIG_MAX_ITEMS        50              // 最大支持的配置项数量
 #define CONFIG_SAVE_SLOT_COUNT  4               // 存档位数量
-#define CONFIG_DEFAULT_SLOT     0               // 默认存档位（开机自动加载）
 
 #define CONFIG_FLASH_SECTION    0               // Flash扇区索引
-#define CONFIG_FLASH_PAGE_BASE  0               // Flash页起始索引
+#define CONFIG_FLASH_PAGE_BASE  0               // Flash页起始索引（Slot 0-3使用Page 0-3）
+#define CONFIG_FLASH_PAGE_AUTO  4               // 自动保存页面（掉电不丢失，Page 4）
 #define CONFIG_MAGIC_NUMBER     0x4D454E55      // 魔数 'MENU'，用于检测Flash是否已初始化
 
 // ==================== 数据类型 ====================
@@ -125,6 +125,23 @@ uint8 config_load_slot(uint8 slot);
  * @return 0=未初始化, 1=已初始化
  */
 uint8 config_check_slot(uint8 slot);
+
+/**
+ * @brief  自动保存当前配置（掉电不丢失）
+ * @param  无
+ * @return 0=成功, 其他=失败
+ * @note   保存到固定的Flash页面（Page 4），退出编辑模式时自动调用
+ */
+uint8 config_auto_save(void);
+
+/**
+ * @brief  自动加载配置（掉电不丢失）
+ * @param  无
+ * @return 0=成功, 其他=失败
+ * @note   从固定的Flash页面（Page 4）加载，开机时自动调用
+ *         如果未初始化，会加载默认值
+ */
+uint8 config_auto_load(void);
 
 /**
  * @brief  重置所有变量为默认值

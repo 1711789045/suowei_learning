@@ -36,6 +36,7 @@
 #include "menu.h"
 #include "pid.h"            // PID参数（motor_kp/ki/kd）
 #include "motor.h"          // 电机控制（VOFA+开关）
+#include "flash.h"          // Flash配置管理（自动保存/加载）
 #include <string.h>
 #include <stdio.h>
 
@@ -50,6 +51,9 @@ static void menu_display_param_value(menu_unit_t *unit, uint16 x, uint16 y, uint
         return;
 
     char buf[32];
+
+    // 设置显示颜色
+    ips114_set_color(color, MENU_COLOR_BG);
 
     switch (unit->param_type)
     {
@@ -110,6 +114,9 @@ static void menu_display_param_value(menu_unit_t *unit, uint16 x, uint16 y, uint
             break;
         }
     }
+
+    // 恢复默认颜色
+    ips114_set_color(MENU_COLOR_TEXT, MENU_COLOR_BG);
 }
 
 /**
@@ -140,8 +147,10 @@ static void menu_display_item(menu_unit_t *unit, uint8 line, uint8 selected, uin
         ips114_show_string(0, y, " ");  // 清空光标位置
     }
 
-    // 显示名称
+    // 显示名称（使用相应颜色）
+    ips114_set_color(color, MENU_COLOR_BG);
     ips114_show_string(10, y, unit->name);
+    ips114_set_color(MENU_COLOR_TEXT, MENU_COLOR_BG);  // 恢复默认颜色
 
     // 显示值（如果是参数）
     if (unit->type == MENU_UNIT_NORMAL && unit->param_ptr != NULL)
@@ -383,6 +392,9 @@ static void menu_navigate_back(void)
         // 如果在编辑模式，退出编辑模式（只局部刷新当前行）
         edit_mode = 0;
         menu_display_item(current_unit, current_line, 1, 0);  // 显示为选中模式颜色
+
+        // 退出编辑模式时自动保存（掉电不丢失）
+        config_auto_save();
         return;
     }
 

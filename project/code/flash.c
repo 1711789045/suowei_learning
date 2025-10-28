@@ -55,7 +55,7 @@ static void config_read_from_buffer(void);
 static uint32 config_get_flash_page(uint8 slot)
 {
     if (slot >= CONFIG_SAVE_SLOT_COUNT)
-        slot = CONFIG_DEFAULT_SLOT;
+        slot = 0;  // 超出范围时使用slot 0
 
     return CONFIG_FLASH_PAGE_BASE + slot;
 }
@@ -353,6 +353,74 @@ uint8 config_check_slot(uint8 slot)
 }
 
 /**
+ * @brief  自动保存当前配置（掉电不丢失）
+ */
+uint8 config_auto_save(void)
+{
+    // 清空缓冲区
+    flash_buffer_clear();
+
+    // 将配置写入缓冲区
+    config_write_to_buffer();
+
+    // 计算需要写入的数据长度
+    uint32 write_len = 2;  // 魔数 + 配置项数量
+    for (uint8 i = 0; i < config_item_count; i++)
+    {
+        if (config_items[i].type == CONFIG_TYPE_DOUBLE)
+            write_len += 2;  // double占用2个位置
+        else
+            write_len += 1;
+    }
+
+    // 擦除Flash页
+    flash_erase_page(CONFIG_FLASH_SECTION, CONFIG_FLASH_PAGE_AUTO);
+
+    // 写入Flash
+    flash_write_page_from_buffer(CONFIG_FLASH_SECTION, CONFIG_FLASH_PAGE_AUTO, write_len);
+
+    printf("[CONFIG] Auto-saved (page %d)\r\n", CONFIG_FLASH_PAGE_AUTO);
+    return 0;
+}
+
+/**
+ * @brief  自动加载配置（掉电不丢失）
+ */
+uint8 config_auto_load(void)
+{
+    // 检查Flash是否已初始化
+    uint8 has_data = flash_check(CONFIG_FLASH_SECTION, CONFIG_FLASH_PAGE_AUTO);
+    if (!has_data)
+    {
+        printf("[CONFIG] Auto-load: No saved data, using defaults\r\n");
+        config_reset_default();
+        return 1;
+    }
+
+    // 清空缓冲区
+    flash_buffer_clear();
+
+    // 计算需要读取的数据长度
+    uint32 read_len = 2;  // 魔数 + 配置项数量
+    for (uint8 i = 0; i < config_item_count; i++)
+    {
+        if (config_items[i].type == CONFIG_TYPE_DOUBLE)
+            read_len += 2;
+        else
+            read_len += 1;
+    }
+
+    // 从Flash读取
+    flash_read_page_to_buffer(CONFIG_FLASH_SECTION, CONFIG_FLASH_PAGE_AUTO, read_len);
+
+    // 从缓冲区读取配置
+    config_read_from_buffer();
+
+    printf("[CONFIG] Auto-loaded (page %d)\r\n", CONFIG_FLASH_PAGE_AUTO);
+    return 0;
+}
+
+/**
  * @brief  重置所有变量为默认值
  */
 void config_reset_default(void)
@@ -422,13 +490,8 @@ void config_init(void)
     // 初始化Flash
     flash_init();
 
-    // 默认情况下配置项在各模块的初始化函数中注册
-    // 这里只负责加载配置
-
-    printf("[CONFIG] Registered %d configuration items\r\n", config_item_count);
-
-    // 加载默认存档位
-    config_load_slot(CONFIG_DEFAULT_SLOT);
+    // 配置项在各模块的初始化函数中注册
+    // 加载配置由main函数在注册完配置项后调用config_auto_load()完成
 
     printf("[CONFIG] Configuration system initialized\r\n");
 }
