@@ -697,15 +697,23 @@ uint8 menu_is_active(void)
 // ==================== 内置功能函数 ====================
 
 /**
- * @brief  在屏幕底部显示提示信息（非阻塞版本）
+ * @brief  在屏幕底部显示提示信息
  */
 static void menu_show_message(const char *msg)
 {
-    // 直接在串口打印，不再屏幕显示（避免阻塞和刷新问题）
+    // 串口打印
     printf("[MENU] %s\r\n", msg);
 
-    // 如果需要屏幕提示，可以在menu_refresh时显示状态栏
-    // 这里先简化，只用串口提示
+    // 在屏幕底部显示提示（Y=120，用绿色高亮）
+    ips114_set_color(RGB565_GREEN, MENU_COLOR_BG);
+    ips114_show_string(0, 120, (const char *)msg);
+    ips114_set_color(MENU_COLOR_TEXT, MENU_COLOR_BG);  // 恢复默认颜色
+
+    // 延迟800ms让用户看到提示
+    system_delay_ms(800);
+
+    // 刷新菜单恢复显示
+    menu_refresh();
 }
 
 /**
