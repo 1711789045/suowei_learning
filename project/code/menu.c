@@ -707,9 +707,9 @@ static void menu_show_message(const char *msg)
     // 串口打印
     printf("[MENU] %s\r\n", msg);
 
-    // 在屏幕底部显示提示（Y=120，用绿色高亮）
+    // 在屏幕底部显���提示（Y=112，字体高度16，范围112-127，不超过135）
     ips114_set_color(RGB565_GREEN, MENU_COLOR_BG);
-    ips114_show_string(0, 120, (const char *)msg);
+    ips114_show_string(0, 112, (const char *)msg);
     ips114_set_color(MENU_COLOR_TEXT, MENU_COLOR_BG);  // 恢复默认颜色
 
     // 延迟800ms让用户看到提示
@@ -717,7 +717,7 @@ static void menu_show_message(const char *msg)
 
     // 清除提示信息（用背景色覆盖）
     ips114_set_color(MENU_COLOR_BG, MENU_COLOR_BG);
-    ips114_show_string(0, 120, "                    ");  // 20个空格清除
+    ips114_show_string(0, 112, "                    ");  // 20个空格清除
     ips114_set_color(MENU_COLOR_TEXT, MENU_COLOR_BG);  // 恢复默认颜色
 }
 

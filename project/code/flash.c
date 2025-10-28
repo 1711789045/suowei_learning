@@ -127,15 +127,20 @@ static void config_read_from_buffer(void)
 
     // 跳过魔数
     uint32 magic = flash_union_buffer[index++].uint32_type;
+    printf("[CONFIG] Read magic=0x%08X (expect=0x%08X)\r\n", magic, CONFIG_MAGIC_NUMBER);
+
     if (magic != CONFIG_MAGIC_NUMBER)
     {
         // Flash未初始化，加载默认值
+        printf("[CONFIG] Magic mismatch! Using defaults\r\n");
         config_reset_default();
         return;
     }
 
     // 读取配置项数量
     uint32 saved_count = flash_union_buffer[index++].uint32_type;
+    printf("[CONFIG] Read count=%d (current=%d)\r\n", saved_count, config_item_count);
+
     if (saved_count != config_item_count)
     {
         // 配置项数量不匹配，可能版本不同，使用默认值
@@ -146,6 +151,7 @@ static void config_read_from_buffer(void)
     }
 
     // 读取所有配置项的值
+    printf("[CONFIG] Loading %d items from Flash...\r\n", config_item_count);
     for (uint8 i = 0; i < config_item_count; i++)
     {
         config_item_t *item = &config_items[i];
@@ -185,6 +191,7 @@ static void config_read_from_buffer(void)
                 break;
         }
     }
+    printf("[CONFIG] Successfully loaded %d items\r\n", config_item_count);
 }
 
 // ==================== API函数实现 ====================
@@ -357,10 +364,12 @@ uint8 config_check_slot(uint8 slot)
  */
 uint8 config_auto_save(void)
 {
+    printf("[CONFIG] Auto-save: Starting (items=%d)...\r\n", config_item_count);
+
     // 清空缓冲区
     flash_buffer_clear();
 
-    // 将配置写入缓冲区
+    // ��配置写入缓冲区
     config_write_to_buffer();
 
     // 计算需要写入的数据长度
@@ -373,13 +382,16 @@ uint8 config_auto_save(void)
             write_len += 1;
     }
 
+    printf("[CONFIG] Auto-save: Erasing page %d...\r\n", CONFIG_FLASH_PAGE_AUTO);
     // 擦除Flash页
     flash_erase_page(CONFIG_FLASH_SECTION, CONFIG_FLASH_PAGE_AUTO);
 
+    printf("[CONFIG] Auto-save: Writing %d words to page %d...\r\n", write_len, CONFIG_FLASH_PAGE_AUTO);
     // 写入Flash
     flash_write_page_from_buffer(CONFIG_FLASH_SECTION, CONFIG_FLASH_PAGE_AUTO, write_len);
 
-    printf("[CONFIG] Auto-saved (page %d)\r\n", CONFIG_FLASH_PAGE_AUTO);
+    printf("[CONFIG] Auto-saved (page %d, %d items, %d words)\r\n",
+           CONFIG_FLASH_PAGE_AUTO, config_item_count, write_len);
     return 0;
 }
 
@@ -388,8 +400,13 @@ uint8 config_auto_save(void)
  */
 uint8 config_auto_load(void)
 {
+    printf("[CONFIG] Auto-load: Starting (items=%d)...\r\n", config_item_count);
+
     // 检查Flash是否已初始化
     uint8 has_data = flash_check(CONFIG_FLASH_SECTION, CONFIG_FLASH_PAGE_AUTO);
+    printf("[CONFIG] Auto-load: Flash check page %d, has_data=%d\r\n",
+           CONFIG_FLASH_PAGE_AUTO, has_data);
+
     if (!has_data)
     {
         printf("[CONFIG] Auto-load: No saved data, using defaults\r\n");
@@ -410,13 +427,17 @@ uint8 config_auto_load(void)
             read_len += 1;
     }
 
+    printf("[CONFIG] Auto-load: Reading %d words from page %d...\r\n",
+           read_len, CONFIG_FLASH_PAGE_AUTO);
+
     // 从Flash读取
     flash_read_page_to_buffer(CONFIG_FLASH_SECTION, CONFIG_FLASH_PAGE_AUTO, read_len);
 
     // 从缓冲区读取配置
     config_read_from_buffer();
 
-    printf("[CONFIG] Auto-loaded (page %d)\r\n", CONFIG_FLASH_PAGE_AUTO);
+    printf("[CONFIG] Auto-loaded (page %d, %d items)\r\n",
+           CONFIG_FLASH_PAGE_AUTO, config_item_count);
     return 0;
 }
 
