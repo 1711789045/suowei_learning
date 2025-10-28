@@ -836,8 +836,10 @@ void image_display_edge_line(const uint8 image[][IMAGE_W], uint16 display_width,
         }
     }
 
-    // ==================== 动态前瞻权重调试信息显示 ====================
+    // ==================== 动态前瞻权重调试信息显示（已禁用避免越界）====================
     // IPS114屏幕宽度240，图像宽度188，调试信息从x=190开始显示
+    // 注释原因：与菜单显示冲突，可能导致Y坐标越界触发Assert
+    /*
     if(dynamic_weight_enable) {
         ips114_show_string(190, 0, "DWgt:ON");             // 动态权重开关状态
         ips114_show_string(190, 16, "Curv:");              // 曲率标签
@@ -856,6 +858,7 @@ void image_display_edge_line(const uint8 image[][IMAGE_W], uint16 display_width,
         ips114_show_string(190, 16, "FixWgt:");            // 固定权重标签
         ips114_show_uint(190, 32, mid_weight_select, 1);   // 固定权重编号（1-5）
     }
+    */
 }
 
 void image_get_left_err(void){
@@ -1257,11 +1260,12 @@ void image_cross_analysis(void)
 	continuity_pointLeft[1] = left_edge_line[continuity_pointLeft[0]];              // 左连续性点列
 	continuity_pointRight[1] = right_edge_line[continuity_pointRight[0]];           // 右连续性点列
 
-	// ==================== 调试信息显示（适配IPS114） ====================
+	// ==================== 调试信息显示（已禁用避免越界） ====================
 	// 显示关键检测变量,帮助诊断识别失败原因
 	// IPS114屏幕宽度240，图像宽度188，调试信息从x=190开始显示
-	ips114_show_uint(190, 96, stop_search_row, 3);           // 搜线截止行
-	ips114_show_uint(190, 112, (uint32)cross_status, 1);     // 十字状态
+	// 注释原因：与菜单显示冲突，可能导致Y坐标越界触发Assert
+	// ips114_show_uint(190, 96, stop_search_row, 3);           // 搜线截止行
+	// ips114_show_uint(190, 112, (uint32)cross_status, 1);     // 十字状态
 
 	// ==================== 直道状态：检测是否进入十字 ====================
 	if(cross_status == CROSS_STRAIGHT) {
