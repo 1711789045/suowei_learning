@@ -821,22 +821,12 @@ void menu_func_load_slot4(void)
  */
 void menu_func_show_image(void)
 {
-    printf("[DEBUG] Show Image: Step 1 - Function entered\r\n");
-    system_delay_ms(10);  // 确保串口输出
-
-    printf("[DEBUG] Show Image: Step 2 - Before ips114_clear()\r\n");
-    system_delay_ms(10);
-
     // 清屏准备显示图像
     ips114_clear();
-
-    printf("[DEBUG] Show Image: Step 3 - After ips114_clear()\r\n");
-    system_delay_ms(10);
 
     uint32 frame_count = 0;
     uint8 exit_flag = 0;
 
-    printf("[DEBUG] Show Image: Step 4 - Entering display loop\r\n");
     // 进入图像显示循环
     while(!exit_flag)
     {
@@ -845,16 +835,12 @@ void menu_func_show_image(void)
         {
             frame_count++;
 
-            printf("[DEBUG] Show Image: Processing frame #%d...\r\n", frame_count);
-
             // 显示图像和边线（仅图像，无任何文字叠加）
             // MT9V03X: 188x120, IPS114: 240x135 → 不会越界
             image_process(MT9V03X_W, MT9V03X_H, 1);
 
             // 清除标志
             mt9v03x_finish_flag = 0;
-
-            printf("[DEBUG] Show Image: Frame #%d displayed OK\r\n", frame_count);
         }
 
         // 扫描按键（非阻塞）
