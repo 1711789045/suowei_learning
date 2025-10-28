@@ -182,6 +182,16 @@ static uint8 last_line = 0;                        // 上次选中行（用于�
 static uint8 edit_mode = 0;                        // 编辑模式标志
 static uint8 menu_active = 0;                      // 菜单激活标志
 
+// 菜单导航栈（记住每层菜单的状态）
+#define MENU_STACK_SIZE 10
+typedef struct {
+    menu_unit_t *page_first;
+    menu_unit_t *current;
+    uint8 line;
+} menu_state_t;
+static menu_state_t menu_stack[MENU_STACK_SIZE];
+static uint8 menu_stack_depth = 0;
+
 // ==================== 菜单核心内部函数 ====================
 static void menu_navigate_up(void);
 static void menu_navigate_down(void);
@@ -332,9 +342,9 @@ static void menu_navigate_enter(void)
 
     if (current_unit->type == MENU_UNIT_NORMAL)
     {
-        // 参数项：进入编辑模式
+        // 参数项：进入编辑模式（只局部刷新当前行）
         edit_mode = 1;
-        menu_refresh();
+        menu_display_item(current_unit, current_line, 1, 1);  // 显示为编辑模式颜色
     }
     else if (current_unit->type == MENU_UNIT_FUNCTION)
     {
@@ -346,7 +356,16 @@ static void menu_navigate_enter(void)
     }
     else if (current_unit->enter != NULL)
     {
-        // 页面入口：进入子菜单
+        // 页面入口：进入子菜单（保存当前状态到栈）
+        if (menu_stack_depth < MENU_STACK_SIZE)
+        {
+            menu_stack[menu_stack_depth].page_first = page_first_unit;
+            menu_stack[menu_stack_depth].current = current_unit;
+            menu_stack[menu_stack_depth].line = current_line;
+            menu_stack_depth++;
+        }
+
+        // 进入子菜单
         current_unit = current_unit->enter;
         page_first_unit = current_unit;
         current_line = 0;
@@ -359,13 +378,23 @@ static void menu_navigate_enter(void)
  */
 static void menu_navigate_back(void)
 {
-    if (current_unit == NULL || current_unit->back == NULL)
+    if (edit_mode)
+    {
+        // 如果在编辑模式，退出编辑模式（只局部刷新当前行）
+        edit_mode = 0;
+        menu_display_item(current_unit, current_line, 1, 0);  // 显示为选中模式颜色
         return;
+    }
 
-    current_unit = current_unit->back;
-    page_first_unit = current_unit;
-    current_line = 0;
-    menu_refresh();
+    // 从栈中恢复上级菜单状态
+    if (menu_stack_depth > 0)
+    {
+        menu_stack_depth--;
+        page_first_unit = menu_stack[menu_stack_depth].page_first;
+        current_unit = menu_stack[menu_stack_depth].current;
+        current_line = menu_stack[menu_stack_depth].line;
+        menu_refresh();
+    }
 }
 
 /**

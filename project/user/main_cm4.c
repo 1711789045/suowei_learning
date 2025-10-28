@@ -62,9 +62,17 @@ int main(void)
     motor_init();                       // 初始化电机PWM、编码器、PID
     pit_ms_init(PIT_CH0, 10);           // 初始化10ms定时器中断
 
-    // 初始化菜单系统
+    // 初始化Flash（必须先初始化Flash）
+    flash_init();
+
+    // 初始化菜单系统并注册配置项
     menu_init();
-    menu_example_create();
+    menu_example_create();              // 创建菜单（会注册配置项）
+
+    // 加载配置（必须在注册配置项之后）
+    config_load_slot(CONFIG_DEFAULT_SLOT);
+
+    // 进入菜单
     menu_example_enter();               // 直接进入菜单
 
     printf("[MAIN] Menu system started\r\n");
