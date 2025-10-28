@@ -817,13 +817,67 @@ void menu_func_load_slot4(void)
 }
 
 /**
- * @brief  显示图像
+ * @brief  实时显示图像（按返回键退出）
  */
 void menu_func_show_image(void)
 {
-    menu_show_message("Show Image");
-    printf("[DEBUG] Show image\r\n");
-    // TODO: 实现图像显示
+    printf("[DEBUG] Entering image display mode...\r\n");
+
+    // 清屏准备显示图像
+    ips114_clear();
+
+    // 显示提示信息（屏幕底部）
+    ips114_set_color(RGB565_GREEN, RGB565_BLACK);
+    ips114_show_string(0, 120, "Press BACK to exit");
+    ips114_set_color(RGB565_WHITE, RGB565_BLACK);
+
+    system_delay_ms(1000);  // 显示提示1秒
+
+    uint32 frame_count = 0;
+    uint8 exit_flag = 0;
+
+    // 进入图像显示循环
+    while(!exit_flag)
+    {
+        // 等待新图像
+        if(mt9v03x_finish_flag)
+        {
+            frame_count++;
+
+            // 显示图像和边线
+            // MT9V03X: 188x120, IPS114: 240x135 → 不会越界
+            image_process(MT9V03X_W, MT9V03X_H, 1);
+
+            // 在右下角显示帧计数（不覆盖图像）
+            ips114_set_color(RGB565_YELLOW, RGB565_BLACK);
+            ips114_show_string(190, 120, "F:");
+            ips114_show_uint(210, 120, frame_count, 5);
+            ips114_set_color(RGB565_WHITE, RGB565_BLACK);
+
+            // 清除标志
+            mt9v03x_finish_flag = 0;
+        }
+
+        // 扫描按键（非阻塞）
+        menu_key_scan();
+        menu_key_e key = menu_key_get_event();
+
+        // 检测返回键
+        if(key == MENU_KEY_BACK)
+        {
+            exit_flag = 1;
+            printf("[DEBUG] Exiting image display mode (frames=%d)\r\n", frame_count);
+        }
+
+        // 短延时，避免CPU占用过高
+        system_delay_ms(10);
+    }
+
+    // 退出时清屏并刷新菜单
+    ips114_clear();
+    menu_refresh();
+
+    printf("[DEBUG] Image display mode exited\r\n");
 }
 
 /**
