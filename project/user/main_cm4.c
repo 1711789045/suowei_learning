@@ -114,21 +114,24 @@ int main(void)
     {
         // �˴���д��Ҫѭ��ִ�еĴ���
 
-        // 图像处理（MT9V03X摄像头）
-        if(mt9v03x_finish_flag){
-            image_count++;
-            printf("[MAIN] Image processing #%d starting...\r\n", image_count);
-            // mode=1: 显示边线，mode=0: 不显示
-            image_process(MT9V03X_W, MT9V03X_H, 1);
-            printf("[MAIN] Image processing #%d OK\r\n", image_count);
-            mt9v03x_finish_flag = 0;
-        }
-
         // 菜单系统处理（使用10ms延时，相当于100Hz刷新率）
         if(menu_is_active())
         {
             menu_process();             // 处理菜单逻辑
             system_delay_ms(10);        // 10ms延时，按键每20ms扫描一次（2次延时）
+        }
+        else
+        {
+            // 只有菜单未激活时才显示图像（避免冲突）
+            // 图像处理（MT9V03X摄像头）
+            if(mt9v03x_finish_flag){
+                image_count++;
+                printf("[MAIN] Image processing #%d starting...\r\n", image_count);
+                // mode=1: 显示边线，mode=0: 不显示
+                image_process(MT9V03X_W, MT9V03X_H, 1);
+                printf("[MAIN] Image processing #%d OK\r\n", image_count);
+                mt9v03x_finish_flag = 0;
+            }
         }
 
         // 每1000次循环输出一次心跳信息
