@@ -198,10 +198,12 @@ static uint8 menu_count_items(menu_unit_t *first)
 {
     uint8 count = 0;
     menu_unit_t *p = first;
-    while (p != NULL)
+    while (p != NULL && count < MENU_MAX_UNITS)  // 防止无限循环
     {
         count++;
         p = p->down;
+        if (p == first)  // 检测到循环链接
+            break;
     }
     return count;
 }
@@ -220,110 +222,104 @@ static menu_unit_t* menu_get_last_item(menu_unit_t *first)
 }
 
 /**
- * @brief  向上导航
+ * @brief  向上导航（只移动光标，不移动内容）
  */
 static void menu_navigate_up(void)
 {
-    if (current_unit == NULL)
+    if (current_unit == NULL || page_first_unit == NULL)
         return;
 
-    // 循环：如果是第一项，跳到最后一项
-    if (current_unit->up == NULL)
+    // 计算当前层级的菜单项总数（带循环检测）
+    uint8 total_items = 0;
+    menu_unit_t *p = page_first_unit;
+    while (p != NULL && total_items < MENU_MAX_UNITS)
     {
-        // 找到最后一项
-        menu_unit_t *last = menu_get_last_item(page_first_unit);
-        if (last != NULL)
-        {
-            current_unit = last;
-            // 计算最后一项的行号
-            uint8 item_count = menu_count_items(page_first_unit);
-            if (item_count <= MENU_ITEMS_PER_PAGE)
-            {
-                current_line = item_count - 1;
-            }
-            else
-            {
-                current_line = MENU_ITEMS_PER_PAGE - 1;
-                // 调整page_first_unit使最后一项在最后一行显示
-                menu_unit_t *p = last;
-                for (uint8 i = 0; i < MENU_ITEMS_PER_PAGE - 1 && p->up != NULL; i++)
-                {
-                    p = p->up;
-                }
-                page_first_unit = p;
-            }
-            menu_refresh();  // 需要全屏刷新
-        }
-        return;
+        total_items++;
+        p = p->down;
+        if (p == page_first_unit)  // 检测到循环
+            break;
     }
 
-    last_line = current_line;
-    current_unit = current_unit->up;
+    if (total_items == 0)
+        return;
 
-    if (current_line > 0)
+    // 保存旧的光标位置
+    uint8 old_line = current_line;
+
+    // 向上移动光标（循环）
+    if (current_line == 0)
     {
-        current_line--;
-        menu_refresh_partial();  // 局部刷新
+        // 在第一行，跳到最后一行
+        current_line = (total_items > MENU_ITEMS_PER_PAGE) ? (MENU_ITEMS_PER_PAGE - 1) : (total_items - 1);
     }
     else
     {
-        // 需要向上滚动页面
-        page_first_unit = current_unit;
-        menu_refresh();  // 全屏刷新
+        // 光标上移一行
+        current_line--;
     }
+
+    // 更新current_unit指针
+    current_unit = page_first_unit;
+    for (uint8 i = 0; i < current_line; i++)
+    {
+        if (current_unit->down != NULL)
+            current_unit = current_unit->down;
+    }
+
+    // 只刷新光标位置（局部刷新）
+    menu_display_cursor(old_line, 0);       // 清除旧光标
+    menu_display_cursor(current_line, 1);   // 显示新光标
 }
 
 /**
- * @brief  向下导航
+ * @brief  向下导航（只移动光标，不移动内容）
  */
 static void menu_navigate_down(void)
 {
-    if (current_unit == NULL)
+    if (current_unit == NULL || page_first_unit == NULL)
         return;
 
-    // 循环：如果是最后一项，跳到第一项
-    if (current_unit->down == NULL)
+    // 计算当前层级的菜单项总数（带循环检测）
+    uint8 total_items = 0;
+    menu_unit_t *p = page_first_unit;
+    while (p != NULL && total_items < MENU_MAX_UNITS)
     {
-        current_unit = page_first_unit;
-        current_line = 0;
-        menu_refresh();  // 需要全屏刷新
-        return;
+        total_items++;
+        p = p->down;
+        if (p == page_first_unit)  // 检测到循环
+            break;
     }
 
-    last_line = current_line;
-    current_unit = current_unit->down;
+    if (total_items == 0)
+        return;
 
-    if (current_line < MENU_ITEMS_PER_PAGE - 1)
+    // 保存旧的光标位置
+    uint8 old_line = current_line;
+
+    // 向下移动光标（循环）
+    uint8 max_line = (total_items > MENU_ITEMS_PER_PAGE) ? (MENU_ITEMS_PER_PAGE - 1) : (total_items - 1);
+    if (current_line >= max_line)
     {
-        // 检查是否是最后一项
-        menu_unit_t *temp = page_first_unit;
-        uint8 count = 0;
-        while (temp != NULL)
-        {
-            count++;
-            temp = temp->down;
-        }
-
-        if (current_line + 1 < count)
-        {
-            current_line++;
-            menu_refresh_partial();  // 局部刷新
-        }
-        else
-        {
-            // 已经是最后一项，无需移动
-            current_line++;
-            menu_refresh_partial();
-        }
+        // 在最后一行，跳到第一行
+        current_line = 0;
     }
     else
     {
-        // 需要向下滚动页面
-        menu_unit_t *temp = page_first_unit;
-        if (temp != NULL && temp->down != NULL)
-            page_first_unit = temp->down;
-        menu_refresh();  // 全屏刷新
+        // 光标下移一行
+        current_line++;
     }
+
+    // 更新current_unit指针
+    current_unit = page_first_unit;
+    for (uint8 i = 0; i < current_line; i++)
+    {
+        if (current_unit->down != NULL)
+            current_unit = current_unit->down;
+    }
+
+    // 只刷新光标位置（局部刷新）
+    menu_display_cursor(old_line, 0);       // 清除旧光标
+    menu_display_cursor(current_line, 1);   // 显示新光标
 }
 
 /**
