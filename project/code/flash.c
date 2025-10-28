@@ -125,6 +125,7 @@ static void config_read_from_buffer(void)
 {
     uint32 index = 0;
 
+    printf("[CONFIG] Read-buffer: Step 1 - Reading magic number...\r\n");
     // 跳过魔数
     uint32 magic = flash_union_buffer[index++].uint32_type;
     printf("[CONFIG] Read magic=0x%08X (expect=0x%08X)\r\n", magic, CONFIG_MAGIC_NUMBER);
@@ -137,6 +138,7 @@ static void config_read_from_buffer(void)
         return;
     }
 
+    printf("[CONFIG] Read-buffer: Step 2 - Reading item count...\r\n");
     // 读取配置项数量
     uint32 saved_count = flash_union_buffer[index++].uint32_type;
     printf("[CONFIG] Read count=%d (current=%d)\r\n", saved_count, config_item_count);
@@ -150,11 +152,14 @@ static void config_read_from_buffer(void)
         return;
     }
 
+    printf("[CONFIG] Read-buffer: Step 3 - Loading %d items...\r\n", config_item_count);
     // 读取所有配置项的值
     printf("[CONFIG] Loading %d items from Flash...\r\n", config_item_count);
     for (uint8 i = 0; i < config_item_count; i++)
     {
         config_item_t *item = &config_items[i];
+
+        printf("[CONFIG] Loading item #%d (%s) type=%d...\r\n", i, item->key, item->type);
 
         switch (item->type)
         {
@@ -190,7 +195,9 @@ static void config_read_from_buffer(void)
                 *(uint8 *)item->var_ptr = flash_union_buffer[index++].uint8_type;
                 break;
         }
+        printf("[CONFIG] Item #%d loaded OK\r\n", i);
     }
+    printf("[CONFIG] Read-buffer: All %d items loaded successfully\r\n", config_item_count);
     printf("[CONFIG] Successfully loaded %d items\r\n", config_item_count);
 }
 
@@ -430,11 +437,15 @@ uint8 config_auto_load(void)
     printf("[CONFIG] Auto-load: Reading %d words from page %d...\r\n",
            read_len, CONFIG_FLASH_PAGE_AUTO);
 
+    printf("[CONFIG] Auto-load: Calling flash_read_page_to_buffer()...\r\n");
     // 从Flash读取
     flash_read_page_to_buffer(CONFIG_FLASH_SECTION, CONFIG_FLASH_PAGE_AUTO, read_len);
+    printf("[CONFIG] Auto-load: flash_read_page_to_buffer() returned OK\r\n");
 
+    printf("[CONFIG] Auto-load: Parsing data from buffer...\r\n");
     // 从缓冲区读取配置
     config_read_from_buffer();
+    printf("[CONFIG] Auto-load: Buffer parsing OK\r\n");
 
     printf("[CONFIG] Auto-loaded (page %d, %d items)\r\n",
            CONFIG_FLASH_PAGE_AUTO, config_item_count);
