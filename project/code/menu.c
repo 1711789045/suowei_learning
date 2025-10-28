@@ -625,7 +625,8 @@ void menu_process(void)
             case MENU_KEY_ENTER:
             case MENU_KEY_BACK:
                 edit_mode = 0;          // 退出编辑模式
-                menu_refresh();
+                config_auto_save();     // 自动保存（掉电不丢失）
+                menu_display_item(current_unit, current_line, 1, 0);  // 刷新为选中状态
                 break;
             default:
                 break;
@@ -714,8 +715,10 @@ static void menu_show_message(const char *msg)
     // 延迟800ms让用户看到提示
     system_delay_ms(800);
 
-    // 刷新菜单恢复显示
-    menu_refresh();
+    // 清除提示信息（用背景色覆盖）
+    ips114_set_color(MENU_COLOR_BG, MENU_COLOR_BG);
+    ips114_show_string(0, 120, "                    ");  // 20个空格清除
+    ips114_set_color(MENU_COLOR_TEXT, MENU_COLOR_BG);  // 恢复默认颜色
 }
 
 /**

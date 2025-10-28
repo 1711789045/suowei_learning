@@ -62,10 +62,7 @@ int main(void)
     motor_init();                       // 初始化电机PWM、编码器、PID
     pit_ms_init(PIT_CH0, 10);           // 初始化10ms定时器中断
 
-    // 初始化Flash（必须先初始化Flash）
-    flash_init();
-
-    // 初始化菜单系统并注册配置项
+    // 初始化菜单系统（内部会初始化Flash和配置系统）
     menu_init();
     menu_example_create();              // 创建菜单（会注册配置项）
 
