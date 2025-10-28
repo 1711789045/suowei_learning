@@ -830,7 +830,19 @@ void menu_func_show_image(void)
     // 进入图像显示循环
     while(!exit_flag)
     {
-        // 等待新图像
+        // 先扫描按键（最高优先级，确保按键响应灵敏）
+        menu_key_scan();
+        menu_key_e key = menu_key_get_event();
+
+        // 检测返回键
+        if(key == MENU_KEY_BACK)
+        {
+            exit_flag = 1;
+            printf("[DEBUG] Exiting image display mode (frames=%d)\r\n", frame_count);
+            break;  // 立即退出循环
+        }
+
+        // 处理图像（如果有新图像）
         if(mt9v03x_finish_flag)
         {
             frame_count++;
@@ -843,19 +855,9 @@ void menu_func_show_image(void)
             mt9v03x_finish_flag = 0;
         }
 
-        // 扫描按键（非阻塞）
-        menu_key_scan();
-        menu_key_e key = menu_key_get_event();
-
-        // 检测返回键
-        if(key == MENU_KEY_BACK)
-        {
-            exit_flag = 1;
-            printf("[DEBUG] Exiting image display mode (frames=%d)\r\n", frame_count);
-        }
-
         // 短延时，避免CPU占用过高
-        system_delay_ms(10);
+        // 延时时间缩短，提高按键检测频率
+        system_delay_ms(5);
     }
 
     // 退出时清屏并刷新菜单
