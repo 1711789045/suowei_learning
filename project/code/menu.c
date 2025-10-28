@@ -826,9 +826,10 @@ void menu_func_show_image(void)
     // 清屏准备显示图像
     ips114_clear();
 
-    // 显示提示信息（屏幕底部）
+    // 显示提示信息（屏幕底部，避免越界）
+    // IPS114高度135，字体高度16，最大Y坐标=135-16=119
     ips114_set_color(RGB565_GREEN, RGB565_BLACK);
-    ips114_show_string(0, 120, "Press BACK to exit");
+    ips114_show_string(0, 112, "Press BACK to exit");  // y=112，安全范围
     ips114_set_color(RGB565_WHITE, RGB565_BLACK);
 
     system_delay_ms(1000);  // 显示提示1秒
@@ -848,10 +849,10 @@ void menu_func_show_image(void)
             // MT9V03X: 188x120, IPS114: 240x135 → 不会越界
             image_process(MT9V03X_W, MT9V03X_H, 1);
 
-            // 在右下角显示帧计数（不覆盖图像）
+            // 在右下角显示帧计数（避免越界）
             ips114_set_color(RGB565_YELLOW, RGB565_BLACK);
-            ips114_show_string(190, 120, "F:");
-            ips114_show_uint(210, 120, frame_count, 5);
+            ips114_show_string(190, 112, "F:");  // y=112，安全范围
+            ips114_show_uint(210, 112, frame_count, 5);
             ips114_set_color(RGB565_WHITE, RGB565_BLACK);
 
             // 清除标志
