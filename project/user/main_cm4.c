@@ -40,6 +40,7 @@
 #include "motor.h"          // 电机控制系统
 #include "encoder.h"        // 编码器模块
 #include "pid.h"            // PID控制模块
+#include "image.h"          // 图像处理模块
 
 // ���µĹ��̻��߹����ƶ���λ�����ִ�����²���
 // ��һ�� �ر��������д򿪵��ļ�
@@ -62,6 +63,9 @@ int main(void)
     motor_init();                       // 初始化电机PWM、编码器、PID
     pit_ms_init(PIT_CH0, 10);           // 初始化10ms定时器中断
 
+    // 初始化MT9V03X摄像头
+    mt9v03x_init();                     // 初始化MT9V03X（188x120@120FPS）
+
     // 初始化菜单系统（内部会初始化Flash和配置系统）
     menu_init();
     menu_example_create();              // 创建菜单（会注册配置项）
@@ -82,6 +86,13 @@ int main(void)
     while(1)
     {
         // �˴���д��Ҫѭ��ִ�еĴ���
+
+        // 图像处理（MT9V03X摄像头）
+        if(mt9v03x_finish_flag){
+            // mode=1: 显示边线，mode=0: 不显示
+            image_process(MT9V03X_W, MT9V03X_H, 1);
+            mt9v03x_finish_flag = 0;
+        }
 
         // 菜单系统处理（使用10ms延时，相当于100Hz刷新率）
         if(menu_is_active())

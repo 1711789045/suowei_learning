@@ -2231,6 +2231,12 @@
             <name>$PROJ_DIR$\..\..\code\motor.h</name>
         </file>
         <file>
+            <name>$PROJ_DIR$\..\..\code\image.c</name>
+        </file>
+        <file>
+            <name>$PROJ_DIR$\..\..\code\image.h</name>
+        </file>
+        <file>
             <name>$PROJ_DIR$\..\..\code\本文件夹作用.txt</name>
         </file>
     </group>

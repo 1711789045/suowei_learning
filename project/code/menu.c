@@ -37,6 +37,7 @@
 #include "pid.h"            // PID参数（motor_kp/ki/kd）
 #include "motor.h"          // 电机控制（VOFA+开关）
 #include "flash.h"          // Flash配置管理（自动保存/加载）
+#include "image.h"          // 图像处理模块
 #include <string.h>
 #include <stdio.h>
 
@@ -882,6 +883,33 @@ void menu_example_create(void)
     config_register_item("image_threshold", &image_threshold, CONFIG_TYPE_UINT16, &image_threshold, "Image Threshold");
     config_register_item("image_exposure", &image_exposure, CONFIG_TYPE_UINT16, &image_exposure, "Image Exposure");
     config_register_item("image_gain", &image_gain, CONFIG_TYPE_FLOAT, &image_gain, "Image Gain");
+
+    // ========== 图像处理参数注册 ==========
+    config_register_item("reference_row", &reference_row, CONFIG_TYPE_UINT8, &reference_row, "Reference Row");
+    config_register_item("cfg_reference_col", &cfg_reference_col, CONFIG_TYPE_UINT8, &cfg_reference_col, "Reference Col");
+    config_register_item("whitemaxmul", &whitemaxmul, CONFIG_TYPE_UINT8, &whitemaxmul, "White Max Mul");
+    config_register_item("whiteminmul", &whiteminmul, CONFIG_TYPE_UINT8, &whiteminmul, "White Min Mul");
+    config_register_item("blackpoint", &blackpoint, CONFIG_TYPE_UINT8, &blackpoint, "Black Point");
+    config_register_item("contrastoffset", &contrastoffset, CONFIG_TYPE_UINT8, &contrastoffset, "Contrast Offset");
+    config_register_item("stoprow", &stoprow, CONFIG_TYPE_UINT8, &stoprow, "Stop Row");
+    config_register_item("searchrange", &searchrange, CONFIG_TYPE_UINT8, &searchrange, "Search Range");
+    config_register_item("stretch_num", &stretch_num, CONFIG_TYPE_UINT8, &stretch_num, "Stretch Num");
+    config_register_item("mid_weight_select", &mid_weight_select, CONFIG_TYPE_UINT16, &mid_weight_select, "Weight Select");
+    config_register_item("cross_enable", &cross_enable, CONFIG_TYPE_UINT16, &cross_enable, "Cross Enable");
+
+    // 动态权重参数
+    config_register_item("dynamic_weight_enable", &dynamic_weight_enable, CONFIG_TYPE_UINT16, &dynamic_weight_enable, "Dynamic Weight");
+    config_register_item("curvature_far_threshold", &curvature_far_threshold, CONFIG_TYPE_UINT16, &curvature_far_threshold, "Curv Far Thr");
+    config_register_item("curvature_near_threshold", &curvature_near_threshold, CONFIG_TYPE_UINT16, &curvature_near_threshold, "Curv Near Thr");
+    config_register_item("weight_hold_time", &weight_hold_time, CONFIG_TYPE_UINT16, &weight_hold_time, "Weight Hold Time");
+    config_register_item("weight_shift_speed", &weight_shift_speed, CONFIG_TYPE_UINT16, &weight_shift_speed, "Weight Shift Spd");
+    config_register_item("curvature_filter_ratio", &curvature_filter_ratio, CONFIG_TYPE_FLOAT, &curvature_filter_ratio, "Curv Filter");
+
+    // 环岛参数
+    config_register_item("circle_1_time", &circle_1_time, CONFIG_TYPE_UINT16, &circle_1_time, "Circle 1 Time");
+    config_register_item("circle_2_time", &circle_2_time, CONFIG_TYPE_UINT16, &circle_2_time, "Circle 2 Time");
+    config_register_item("circle_4_time", &circle_4_time, CONFIG_TYPE_UINT16, &circle_4_time, "Circle 4 Time");
+    config_register_item("circle_5_time", &circle_5_time, CONFIG_TYPE_UINT16, &circle_5_time, "Circle 5 Time");
 
     // ========== 一级菜单 ==========
     menu_root = menu_create_unit("Main Menu", MENU_UNIT_PAGE);
