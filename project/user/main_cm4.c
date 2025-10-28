@@ -86,11 +86,10 @@ int main(void)
     menu_example_create();              // 创建菜单（会注册配置项）
     printf("[MAIN] Step 7: Menu create OK\r\n");
 
-    // 自动加载配置（掉电不丢失，从Page 4加载）
-    // 临时禁用：Flash读取函数有Bug，待调试
-    printf("[MAIN] Step 8: Config auto load SKIPPED (Flash read issue)\r\n");
-    printf("[MAIN] Step 8: Using default values for all parameters\r\n");
-    // config_auto_load();
+    // 自动加载配置（掉电不丢失，从Flash Page 4加载）
+    printf("[MAIN] Step 8: Config auto load starting...\r\n");
+    config_auto_load();
+    printf("[MAIN] Step 8: Config auto load OK\r\n");
 
     // 进入菜单
     printf("[MAIN] Step 9: Menu enter starting...\r\n");

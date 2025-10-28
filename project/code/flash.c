@@ -371,18 +371,12 @@ uint8 config_check_slot(uint8 slot)
  */
 uint8 config_auto_save(void)
 {
-    // 临时禁用：Flash写入函数有Bug，待调试
-    printf("[CONFIG] Auto-save: SKIPPED (Flash write issue)\r\n");
-    return 0;
-
-    // 下面的代码暂时不执行
-    #if 0
     printf("[CONFIG] Auto-save: Starting (items=%d)...\r\n", config_item_count);
 
     // 清空缓冲区
     flash_buffer_clear();
 
-    // ��配置写入缓冲区
+    // 将配置写入缓冲区
     config_write_to_buffer();
 
     // 计算需要写入的数据长度
@@ -406,7 +400,6 @@ uint8 config_auto_save(void)
     printf("[CONFIG] Auto-saved (page %d, %d items, %d words)\r\n",
            CONFIG_FLASH_PAGE_AUTO, config_item_count, write_len);
     return 0;
-    #endif
 }
 
 /**

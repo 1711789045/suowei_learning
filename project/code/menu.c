@@ -830,15 +830,16 @@ void menu_func_show_image(void)
     // 进入图像显示循环
     while(!exit_flag)
     {
-        // 先扫描按键（最高优先级，确保按键响应灵敏）
-        menu_key_scan();
-        menu_key_e key = menu_key_get_event();
+        // 直接检测返回键的按下状态（不等待释放）
+        key_scanner();  // 更新按键状态
+        key_state_enum key4_state = key_get_state(KEY_4);
 
-        // 检测返回键
-        if(key == MENU_KEY_BACK)
+        // 按键按下时立即退出（不需要松开）
+        if(key4_state == KEY_SHORT_PRESS || key4_state == KEY_LONG_PRESS)
         {
             exit_flag = 1;
             printf("[DEBUG] Exiting image display mode (frames=%d)\r\n", frame_count);
+            key_clear_state(KEY_4);  // 清除按键状态
             break;  // 立即退出循环
         }
 
