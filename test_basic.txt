@@ -1,0 +1,29 @@
+// 最简单的测试程序 - 用于验证硬件是否正常
+// 如果更换电池后仍然闪烁，请用这个程序替换main_cm4.c的内容
+
+#include "zf_common_headfile.h"
+
+int main(void)
+{
+    clock_init(SYSTEM_CLOCK_160M);
+    debug_init();
+
+    // 只初始化一个LED（如果有的话）
+    gpio_init(P23_7, GPO, GPIO_LOW, GPO_PUSH_PULL);
+
+    uint32 cnt = 0;
+
+    while(1)
+    {
+        // 每秒翻转LED和打印信息
+        gpio_toggle_level(P23_7);
+        printf("Test %d\r\n", cnt++);
+        system_delay_ms(1000);
+    }
+}
+
+// 这个程序只做最基本的操作：
+// 1. 初始化时钟和串口
+// 2. 翻转LED
+// 3. 打印信息
+// 如果这个程序都不能稳定运行，那一定是硬件/电源问题
