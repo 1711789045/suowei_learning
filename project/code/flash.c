@@ -311,15 +311,51 @@ uint8 config_save_slot(uint8 slot)
  */
 uint8 config_load_slot(uint8 slot)
 {
-    // ==================== Flash读取功能临时禁用 ====================
-    // 原因：flash_read_page_to_buffer()会挂死系统
-    // 建议：使用Flash写入功能保存配置即可
-    // ==================== ==================== ====================
+    if (slot >= CONFIG_SAVE_SLOT_COUNT)
+    {
+        printf("[CONFIG ERROR] Invalid slot %d\r\n", slot);
+        return 1;
+    }
 
-    printf("[CONFIG] Load slot %d: DISABLED (flash_read_page_to_buffer hangs)\r\n", slot);
-    printf("[CONFIG] Flash write功能正常, 可以保存配置到slot %d\r\n", slot);
+    uint32 page = config_get_flash_page(slot);
 
-    return 1;  // 返回失败
+    // ==================== 关键修复：先检查Flash是否已初始化 ====================
+    uint8 has_data = flash_check(CONFIG_FLASH_SECTION, page);
+    printf("[CONFIG] Load slot %d (page %d): has_data=%d\r\n", slot, page, has_data);
+
+    if (!has_data)
+    {
+        // 存档位未保存过数据，使用默认值
+        printf("[CONFIG] Load slot %d: No saved data, using defaults\r\n", slot);
+        config_reset_default();
+        return 1;
+    }
+
+    // 存档位有数据，安全读取
+    flash_buffer_clear();
+
+    // 计算需要读取的数据长度
+    uint32 read_len = 2;  // 魔数 + 配置项数量
+    for (uint8 i = 0; i < config_item_count; i++)
+    {
+        if (config_items[i].type == CONFIG_TYPE_DOUBLE)
+            read_len += 2;
+        else
+            read_len += 1;
+    }
+
+    printf("[CONFIG] Load slot %d: Reading %d words from page %d...\r\n",
+           slot, read_len, page);
+
+    // 从Flash读取
+    flash_read_page_to_buffer(CONFIG_FLASH_SECTION, page, read_len);
+
+    // 从缓冲区读取配置
+    config_read_from_buffer();
+
+    printf("[CONFIG] Successfully loaded from slot %d (page %d, %d items)\r\n",
+           slot, page, config_item_count);
+    return 0;
 }
 
 /**
@@ -379,23 +415,47 @@ uint8 config_auto_save(void)
  */
 uint8 config_auto_load(void)
 {
-    // ==================== Flash读取功能临时禁用 ====================
-    // 问题：flash_read_page_to_buffer()在当前配置下会挂死系统
-    // 原因：可能是工作Flash区域的地址映射或MPU配置问题
-    //
-    // 当前解决方案：
-    // 1. Flash写入功能正常工作 - config_auto_save()可以保存配置
-    // 2. 自动加载功能禁用 - 系统启动时使用默认值
-    // 3. 手动加载功能可用 - 可以通过菜单手动加载存档位
-    //
-    // 建议：使用手动加载存档位功能（菜单中的"Load Slot 0-3"）
-    //
-    // TODO：需要调试Flash读取或使用Infineon SDK原生Flash API
-    // ==================== ==================== ====================
+    printf("[CONFIG] Auto-load: Starting (items=%d)...\r\n", config_item_count);
 
-    printf("[CONFIG] Auto-load: DISABLED (flash_read_page_to_buffer hangs)\r\n");
-    printf("[CONFIG] Using default values. You can manually load from slots.\r\n");
+    // ==================== 关键修复：先检查Flash是否已初始化 ====================
+    // 如果Flash页面未写入过数据，flash_check()会返回0
+    // 此时直接使用默认值，不调用flash_read_page_to_buffer()避免挂死
+    uint8 has_data = flash_check(CONFIG_FLASH_SECTION, CONFIG_FLASH_PAGE_AUTO);
+    printf("[CONFIG] Auto-load: Flash check page %d, has_data=%d\r\n",
+           CONFIG_FLASH_PAGE_AUTO, has_data);
 
+    if (!has_data)
+    {
+        // Flash页面未初始化，使用默认值
+        printf("[CONFIG] Auto-load: No saved data, using defaults\r\n");
+        config_reset_default();
+        return 1;  // 返回失败，表示使用了默认值
+    }
+
+    // Flash有数据，安全读取
+    flash_buffer_clear();
+
+    // 计算需要读取的数据长度
+    uint32 read_len = 2;  // 魔数 + 配置项数量
+    for (uint8 i = 0; i < config_item_count; i++)
+    {
+        if (config_items[i].type == CONFIG_TYPE_DOUBLE)
+            read_len += 2;  // double占用2个uint32
+        else
+            read_len += 1;
+    }
+
+    printf("[CONFIG] Auto-load: Reading %d words from page %d...\r\n",
+           read_len, CONFIG_FLASH_PAGE_AUTO);
+
+    // 从Flash读取
+    flash_read_page_to_buffer(CONFIG_FLASH_SECTION, CONFIG_FLASH_PAGE_AUTO, read_len);
+
+    // 从缓冲区读取配置
+    config_read_from_buffer();
+
+    printf("[CONFIG] Auto-loaded (page %d, %d items)\r\n",
+           CONFIG_FLASH_PAGE_AUTO, config_item_count);
     return 0;
 }
 
