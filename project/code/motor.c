@@ -223,5 +223,9 @@ void motor_set_pid(float kp, float ki, float kd)
     motor_ki = ki;
     motor_kd = kd;
 
+    // 重新初始化PID控制器，使新参数立即生效
+    pid_reset(&pid_left);
+    pid_reset(&pid_right);
+
     printf("[MOTOR] PID updated - Kp=%.2f Ki=%.2f Kd=%.2f\r\n", motor_kp, motor_ki, motor_kd);
 }

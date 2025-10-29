@@ -87,15 +87,6 @@ void menu_key_scan(void)
     key_state_enum key3_state = key_get_state(KEY_3);
     key_state_enum key4_state = key_get_state(KEY_4);
 
-    // 调试：打印按键状态（每100次打印一次，减少串口输出）
-    static uint16 debug_cnt = 0;
-    debug_cnt++;
-    if (debug_cnt >= 100)
-    {
-        debug_cnt = 0;
-        printf("[KEY] States: K1=%d K2=%d K3=%d K4=%d\r\n", key1_state, key2_state, key3_state, key4_state);
-    }
-
     // 长按检测（检测按键持续按下）
     if (key1_state == KEY_SHORT_PRESS || key1_state == KEY_LONG_PRESS)
     {
