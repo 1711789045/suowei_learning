@@ -32,6 +32,7 @@
 * 日期              作者                备注
 * 2024-11-19     pudding            first version
 * 2025-10-29     Claude             转换为UTF-8编码，修复中文乱码
+* 2025-10-29     Claude             重构主函数结构，封装初始化代码
 ********************************************************************************************************************/
 
 #include "zf_common_headfile.h"
@@ -47,100 +48,77 @@
 // 第一步 关闭所有打开的文件
 // 第二步 project->clean  等待其返回后再编译
 
-// 本工程是开源库示例工程，请不要直接移动或更改其中任何内容
-// 本工程是开源库示例工程，请不要直接移动或更改其中任何内容
-// 本工程是开源库示例工程，请不要直接移动或更改其中任何内容
-
 // **************************** 代码区域 ****************************
 
+/**
+ * @brief  系统初始化函数
+ * @param  无
+ * @return 无
+ * @note   按顺序初始化所有外设和系统模块
+ */
+void system_init(void)
+{
+    // 1. 时钟初始化 (必须最先执行)
+    clock_init(SYSTEM_CLOCK_160M);
+
+    // 2. 调试串口初始化
+    debug_init();
+    printf("\r\n========================================\r\n");
+    printf("  CYT2BL3 Smart Car System v1.0\r\n");
+    printf("  System Clock: 160MHz\r\n");
+    printf("========================================\r\n");
+
+    // 3. 电机控制系统初始化
+    motor_init();
+
+    // 4. 定时器中断初始化 (10ms电机控制周期)
+    pit_ms_init(PIT_CH0, 10);
+
+    // 5. 摄像头初始化 (MT9V03X 188x120@120FPS)
+    mt9v03x_init();
+
+    // 6. 菜单系统初始化 (内部会初始化Flash和按键)
+    menu_init();
+    menu_example_create();
+
+    // 7. 加载配置 (从Flash Page 4加载，掉电不丢失)
+    config_auto_load();
+
+    // 8. 进入菜单
+    menu_example_enter();
+
+    printf("\r\n[System] All modules initialized successfully\r\n");
+    printf("[System] System ready, entering main loop...\r\n\r\n");
+}
+
+/**
+ * @brief  主函数
+ * @param  无
+ * @return 无
+ */
 int main(void)
 {
-    clock_init(SYSTEM_CLOCK_160M);      // 时钟设置及系统初始化 <必须最开始>
+    // 系统初始化
+    system_init();
 
-    debug_init();                       // 调试串口初始化
-    printf("[MAIN] === System Boot Start ===\r\n");
-    printf("[MAIN] Step 1: Clock init OK (160MHz)\r\n");
-    printf("[MAIN] Step 2: Debug UART init OK\r\n");
-
-    // 此处编写用户代码 例如外设初始化代码
-
-    // 初始化电机控制系统
-    printf("[MAIN] Step 3: Motor init starting...\r\n");
-    motor_init();                       // 初始化电机PWM、编码器、PID
-    printf("[MAIN] Step 3: Motor init OK\r\n");
-
-    printf("[MAIN] Step 4: PIT timer init starting...\r\n");
-    pit_ms_init(PIT_CH0, 10);           // 初始化10ms定时器中断
-    printf("[MAIN] Step 4: PIT timer init OK (10ms)\r\n");
-
-    // 初始化MT9V03X摄像头
-    printf("[MAIN] Step 5: MT9V03X camera init starting...\r\n");
-    mt9v03x_init();                     // 初始化MT9V03X (188x120@120FPS)
-    printf("[MAIN] Step 5: MT9V03X camera init OK (188x120@120FPS)\r\n");
-
-    // 初始化菜单系统 (内部会初始化Flash和配置系统)
-    printf("[MAIN] Step 6: Menu system init starting...\r\n");
-    menu_init();
-    printf("[MAIN] Step 6: Menu system init OK\r\n");
-
-    printf("[MAIN] Step 7: Menu create starting...\r\n");
-    menu_example_create();              // 创建菜单 (会注册配置项)
-    printf("[MAIN] Step 7: Menu create OK\r\n");
-
-    // 自动加载配置 (掉电不丢失，从Flash Page 4加载)
-    printf("[MAIN] Step 8: Config auto load starting...\r\n");
-    config_auto_load();
-    printf("[MAIN] Step 8: Config auto load OK\r\n");
-
-    // 进入菜单
-    printf("[MAIN] Step 9: Menu enter starting...\r\n");
-    menu_example_enter();               // 直接进入菜单
-    printf("[MAIN] Step 9: Menu enter OK\r\n");
-
-    printf("[MAIN] === System Boot Complete ===\r\n");
-    printf("[MAIN] Menu system started\r\n");
-    printf("[MAIN] Motor control system started (10ms interrupt)\r\n");
-    printf("[MAIN] Entering main loop...\r\n");
-
-
-
-
-    // 此处编写用户代码 例如外设初始化代码
-
-    uint32 loop_count = 0;
-    uint32 image_count = 0;
-
+    // 主循环
     while(1)
     {
-        // 此处编写需要循环执行的代码
-
-        // 菜单系统处理 (使用10ms延时，相当于100Hz刷新率)
+        // 菜单系统处理
         if(menu_is_active())
         {
-            menu_process();             // 处理菜单逻辑
-            system_delay_ms(10);        // 10ms延时，按键每20ms扫描一次 (2次延时)
+            menu_process();             // 处理菜单逻辑 (按键、显示、编辑等)
+            system_delay_ms(10);        // 10ms延时，100Hz刷新率
         }
         else
         {
-            // 只有菜单未激活时才显示图像 (避免冲突)
-            // 图像处理 (MT9V03X摄像头)
-            if(mt9v03x_finish_flag){
-                image_count++;
-                printf("[MAIN] Image processing #%d starting...\r\n", image_count);
-                // mode=1: 显示边线，mode=0: 不显示
-                image_process(MT9V03X_W, MT9V03X_H, 1);
-                printf("[MAIN] Image processing #%d OK\r\n", image_count);
+            // 图像处理 (只在菜单未激活时执行，避免显示冲突)
+            if(mt9v03x_finish_flag)
+            {
+                image_process(MT9V03X_W, MT9V03X_H, 1);  // mode=1: 显示边线
                 mt9v03x_finish_flag = 0;
             }
         }
-
-        // 每1000次循环输出一次心跳信息
-        loop_count++;
-        if(loop_count % 1000 == 0){
-            printf("[MAIN] Main loop alive: %d iterations\r\n", loop_count);
-        }
-
-        // 此处编写需要循环执行的代码
     }
 }
 
