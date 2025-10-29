@@ -30,7 +30,7 @@ void pid_init(void)
 
 /*********************************************************************************************************************
 * 函数名称: pid_reset
-* 功能说明: 重置PID状态(清空历史误差)
+* 功能说明: 重置PID状态(清空历史误差和输出)
 * 参数说明: pid - PID状态结构体指针
 * 返回值:   无
 * 备注:     切换控制目标或启动时调用,避免历史误差影响
@@ -38,7 +38,8 @@ void pid_init(void)
 void pid_reset(pid_t *pid)
 {
     pid->error_last = 0.0f;
-    pid->error_sum = 0.0f;
+    pid->error_last2 = 0.0f;
+    pid->output = 0.0f;
 }
 
 /*********************************************************************************************************************
@@ -48,26 +49,34 @@ void pid_reset(pid_t *pid)
 *           target - 目标值
 *           actual - 实际值
 * 返回值:   float - PID控制输出
-* 备注:     增量式PID公式: output = Kp×e + Ki×Σe + Kd×Δe
+* 备注:     增量式PID公式: Δu(k) = Kp*[e(k)-e(k-1)] + Ki*e(k) + Kd*[e(k)-2*e(k-1)+e(k-2)]
+*           输出累加: u(k) = u(k-1) + Δu(k)
 ********************************************************************************************************************/
 float pid_calc(pid_t *pid, float target, float actual)
 {
-    // 计算当前误差
+    // 计算当前误差 e(k)
     float error = target - actual;
 
-    // 更新误差累积(积分项)
-    pid->error_sum += error;
+    // 计算增量式PID各项
+    float delta_p = motor_kp * (error - pid->error_last);                          // 比例项增量
+    float delta_i = motor_ki * error;                                               // 积分项（误差本身）
+    float delta_d = motor_kd * (error - 2.0f * pid->error_last + pid->error_last2); // 微分项增量
 
-    // 计算误差变化(微分项)
-    float error_delta = error - pid->error_last;
+    // 计算总增量
+    float delta_output = delta_p + delta_i + delta_d;
 
-    // 增量式PID计算
-    float output = motor_kp * error           // 比例项
-                 + motor_ki * pid->error_sum  // 积分项
-                 + motor_kd * error_delta;    // 微分项
+    // 累加到输出
+    pid->output += delta_output;
 
-    // 保存当前误差供下次使用
+    // 限幅（防止积分饱和）
+    if (pid->output > 10000.0f)
+        pid->output = 10000.0f;
+    else if (pid->output < -10000.0f)
+        pid->output = -10000.0f;
+
+    // 更新历史误差
+    pid->error_last2 = pid->error_last;
     pid->error_last = error;
 
-    return output;
+    return pid->output;
 }

@@ -10,11 +10,12 @@
 
 #include "zf_common_headfile.h"
 
-// PID状态结构体(每个控制对象独立的状态)
+// PID状态结构体(每个控制对象独立的状态) - 增量式PID
 typedef struct
 {
-    float error_last;           // 上次误差(用于计算微分项)
-    float error_sum;            // 误差累积(用于计算积分项)
+    float error_last;           // 上次误差 e(k-1)
+    float error_last2;          // 上上次误差 e(k-2)
+    float output;               // 当前输出累积值
 } pid_t;
 
 // 全局PID参数(左右电机共享,通过菜单调参)
