@@ -82,7 +82,8 @@ static void menu_display_param_value(menu_unit_t *unit, uint16 x, uint16 y, uint
         case CONFIG_TYPE_INT16:
         {
             int16 val = *(int16 *)unit->param_ptr;
-            sprintf(buf, "%d", val);
+            // 使用固定宽度格式化，确保清除旧字符
+            sprintf(buf, "%-5d", val);  // 左对齐，5位宽度，不足用空格填充
             ips114_show_string(x, y, buf);
             break;
         }
