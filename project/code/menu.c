@@ -810,7 +810,6 @@ static void menu_show_message(const char *msg)
 void menu_func_car_start(void)
 {
     menu_show_message("Car Start!");
-    printf("[CAR] Car started!\r\n");
     // TODO: 实现发车逻辑
 }
 
@@ -821,7 +820,6 @@ void menu_func_save_slot1(void)
 {
     config_save_slot(0);
     menu_show_message("Saved to Slot 1");
-    printf("[MENU] Config saved to slot 1\r\n");
 }
 
 /**
@@ -831,7 +829,6 @@ void menu_func_save_slot2(void)
 {
     config_save_slot(1);
     menu_show_message("Saved to Slot 2");
-    printf("[MENU] Config saved to slot 2\r\n");
 }
 
 /**
@@ -841,7 +838,6 @@ void menu_func_save_slot3(void)
 {
     config_save_slot(2);
     menu_show_message("Saved to Slot 3");
-    printf("[MENU] Config saved to slot 3\r\n");
 }
 
 /**
@@ -851,7 +847,6 @@ void menu_func_save_slot4(void)
 {
     config_save_slot(3);
     menu_show_message("Saved to Slot 4");
-    printf("[MENU] Config saved to slot 4\r\n");
 }
 
 /**
@@ -861,7 +856,6 @@ void menu_func_load_slot1(void)
 {
     config_load_slot(0);
     menu_show_message("Loaded from Slot 1");
-    printf("[MENU] Config loaded from slot 1\r\n");
     menu_refresh();
 }
 
@@ -872,7 +866,6 @@ void menu_func_load_slot2(void)
 {
     config_load_slot(1);
     menu_show_message("Loaded from Slot 2");
-    printf("[MENU] Config loaded from slot 2\r\n");
     menu_refresh();
 }
 
@@ -883,7 +876,6 @@ void menu_func_load_slot3(void)
 {
     config_load_slot(2);
     menu_show_message("Loaded from Slot 3");
-    printf("[MENU] Config loaded from slot 3\r\n");
     menu_refresh();
 }
 
@@ -894,7 +886,6 @@ void menu_func_load_slot4(void)
 {
     config_load_slot(3);
     menu_show_message("Loaded from Slot 4");
-    printf("[MENU] Config loaded from slot 4\r\n");
     menu_refresh();
 }
 
@@ -920,7 +911,6 @@ void menu_func_show_image(void)
         if(key4_state == KEY_SHORT_PRESS || key4_state == KEY_LONG_PRESS)
         {
             exit_flag = 1;
-            printf("[DEBUG] Exiting image display mode (frames=%d)\r\n", frame_count);
             key_clear_state(KEY_4);  // 清除按键状态
             break;  // 立即退出循环
         }
@@ -947,7 +937,6 @@ void menu_func_show_image(void)
     ips114_clear();
     menu_refresh();
 
-    printf("[DEBUG] Image display mode exited\r\n");
 }
 
 /**
@@ -956,7 +945,6 @@ void menu_func_show_image(void)
 void menu_func_test(void)
 {
     menu_show_message("Test Function");
-    printf("[DEBUG] Test function\r\n");
     // TODO: 实现测试功能
 }
 
@@ -966,7 +954,6 @@ void menu_func_test(void)
 void menu_func_vofa_toggle(void)
 {
     motor_vofa_enable = !motor_vofa_enable;
-    printf("[DEBUG] VOFA+ %s\r\n", motor_vofa_enable ? "ON" : "OFF");
 }
 
 // ==================== 菜单示例 ====================
@@ -1014,11 +1001,10 @@ void menu_example_create(void)
     MENU_ADD_PARAM_AUTO(servo_param4, &servo_kp, CONFIG_TYPE_FLOAT, 0.1f, 2, 1, "Servo Kp", servo_page);
 
     // ========== Motor三级参数 (使用简化宏) ==========
-    MENU_ADD_PARAM_AUTO(motor_param1, &motor_kp, CONFIG_TYPE_FLOAT, 0.1f, 2, 2, "Motor Kp", motor_page);
-    MENU_ADD_PARAM_AUTO(motor_param2, &motor_ki, CONFIG_TYPE_FLOAT, 0.1f, 2, 2, "Motor Ki", motor_page);
-    MENU_ADD_PARAM_AUTO(motor_param3, &motor_kd, CONFIG_TYPE_FLOAT, 0.1f, 2, 2, "Motor Kd", motor_page);
-    MENU_ADD_PARAM_AUTO(motor_param4, &motor_basic_speed, CONFIG_TYPE_INT16, 10.0f, 3, 0, "Basic Speed", motor_page);
-    MENU_ADD_PARAM_AUTO(motor_param5, &motor_vofa_enable, CONFIG_TYPE_UINT8, 1.0f, 1, 0, "Speed Loop Debug", motor_page);
+    MENU_ADD_PARAM_AUTO(motor_kp, &motor_kp, CONFIG_TYPE_FLOAT, 0.1f, 2, 2, "Motor Kp", motor_page);
+    MENU_ADD_PARAM_AUTO(motor_ki, &motor_ki, CONFIG_TYPE_FLOAT, 0.1f, 2, 2, "Motor Ki", motor_page);
+    MENU_ADD_PARAM_AUTO(motor_kd, &motor_kd, CONFIG_TYPE_FLOAT, 0.1f, 2, 2, "Motor Kd", motor_page);
+    MENU_ADD_PARAM_AUTO(basic_speed, &motor_basic_speed, CONFIG_TYPE_INT16, 10.0f, 3, 0, "Basic Speed", motor_page);
 
     // ========== Image三级参数 (使用简化宏) ==========
     MENU_ADD_PARAM_AUTO(image_param1, &image_threshold, CONFIG_TYPE_UINT16, 5.0f, 3, 0, "Image Threshold", image_page);
@@ -1076,7 +1062,6 @@ void menu_example_create(void)
     menu_link(debug_test, debug_show_image, debug_speed_loop, NULL, debug);
     menu_link(debug_speed_loop, debug_test, debug_show_image, NULL, debug);        // 循环
 
-    printf("[MENU_EXAMPLE] Three-level menu created (using auto-link for params)\r\n");
 }
 
 /**

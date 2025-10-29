@@ -54,41 +54,88 @@
  * @brief  系统初始化函数
  * @param  无
  * @return 无
- * @note   按顺序初始化所有外设和系统模块
+ * @note   按顺序初始化所有外设和系统模块，失败时打印错误并在屏幕显示
  */
 void system_init(void)
 {
-    // 1. 时钟初始化 (必须最先执行)
-    clock_init(SYSTEM_CLOCK_160M);
+    uint8 init_failed = 0;  // 初始化失败标志
 
-    // 2. 调试串口初始化
-    debug_init();
+    // 1. 时钟初始化 (必须最先执行)
     printf("\r\n========================================\r\n");
     printf("  CYT2BL3 Smart Car System v1.0\r\n");
-    printf("  System Clock: 160MHz\r\n");
+    printf("  Initializing...\r\n");
     printf("========================================\r\n");
 
+    printf("[1/8] Clock initialization...");
+    clock_init(SYSTEM_CLOCK_160M);
+    printf("OK (160MHz)\r\n");
+
+    // 2. 调试串口初始化
+    printf("[2/8] Debug UART initialization...");
+    debug_init();
+    printf("OK\r\n");
+
     // 3. 电机控制系统初始化
+    printf("[3/8] Motor system initialization...");
     motor_init();
+    printf("OK\r\n");
 
     // 4. 定时器中断初始化 (10ms电机控制周期)
+    printf("[4/8] Timer interrupt (10ms)...");
     pit_ms_init(PIT_CH0, 10);
+    printf("OK\r\n");
 
     // 5. 摄像头初始化 (MT9V03X 188x120@120FPS)
-    mt9v03x_init();
+    printf("[5/8] Camera MT9V03X initialization...");
+    if(mt9v03x_init())
+    {
+        printf("FAILED!\r\n");
+        printf("[ERROR] Camera initialization failed\r\n");
+        init_failed = 1;
+    }
+    else
+    {
+        printf("OK (188x120@120FPS)\r\n");
+    }
 
     // 6. 菜单系统初始化 (内部会初始化Flash和按键)
+    printf("[6/8] Menu system initialization...");
     menu_init();
     menu_example_create();
+    printf("OK\r\n");
 
-    // 7. 加载配置 (从Flash Page 4加载，掉电不丢失)
+    // 7. 加载配置 (从Flash Slot 0自动加载)
+    printf("[7/8] Loading config from Flash...");
     config_auto_load();
+    printf("OK\r\n");
 
     // 8. 进入菜单
+    printf("[8/8] Entering menu...");
     menu_example_enter();
+    printf("OK\r\n");
 
-    printf("\r\n[System] All modules initialized successfully\r\n");
-    printf("[System] System ready, entering main loop...\r\n\r\n");
+    // 初始化完成提示
+    printf("\r\n========================================\r\n");
+    if(init_failed)
+    {
+        printf("  System initialized with ERRORS!\r\n");
+        printf("  Please check hardware connections\r\n");
+        printf("========================================\r\n\r\n");
+
+        // 在屏幕上显示错误信息
+        ips114_clear();
+        ips114_show_string(0, 0, "INIT ERROR!");
+        ips114_show_string(0, 20, "Camera failed");
+        ips114_show_string(0, 40, "Check hardware");
+        system_delay_ms(3000);  // 显示3秒
+        menu_refresh();  // 刷新菜单显示
+    }
+    else
+    {
+        printf("  All modules initialized successfully!\r\n");
+        printf("  System ready\r\n");
+        printf("========================================\r\n\r\n");
+    }
 }
 
 /**
