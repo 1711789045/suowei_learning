@@ -596,6 +596,83 @@ void menu_link(menu_unit_t *current, menu_unit_t *up, menu_unit_t *down,
 }
 
 /**
+ * @brief  自动链接辅助 - 静态变量（维护每个页面的子节点链表）
+ */
+#define MAX_PAGE_TRACK 20  // 最多跟踪20个页面
+static struct {
+    menu_unit_t* page;          // 页面指针
+    menu_unit_t* first_child;   // 第一个子节点
+    menu_unit_t* last_child;    // 最后一个子节点
+} page_tracker[MAX_PAGE_TRACK] = {0};
+static uint8 page_tracker_count = 0;
+
+/**
+ * @brief  自动链接子节点到父页面
+ * @param  child: 子节点
+ * @param  parent: 父页面
+ * @note   自动维护每个页面的子节点链表，简化菜单创建代码
+ */
+void menu_auto_link_child(menu_unit_t* child, menu_unit_t* parent)
+{
+    if (child == NULL || parent == NULL)
+        return;
+
+    // 查找该页面是否已在跟踪表中
+    int8 page_idx = -1;
+    for (uint8 i = 0; i < page_tracker_count; i++)
+    {
+        if (page_tracker[i].page == parent)
+        {
+            page_idx = i;
+            break;
+        }
+    }
+
+    // 如果是新页面,添加到跟踪表
+    if (page_idx == -1)
+    {
+        if (page_tracker_count >= MAX_PAGE_TRACK)
+        {
+            printf("[MENU] Error: 页面跟踪表已满\r\n");
+            return;
+        }
+        page_idx = page_tracker_count;
+        page_tracker[page_idx].page = parent;
+        page_tracker[page_idx].first_child = NULL;
+        page_tracker[page_idx].last_child = NULL;
+        page_tracker_count++;
+    }
+
+    // 链接子节点
+    if (page_tracker[page_idx].first_child == NULL)
+    {
+        // 第一个子节点
+        page_tracker[page_idx].first_child = child;
+        page_tracker[page_idx].last_child = child;
+
+        // 链接: parent.enter -> child, child自环
+        parent->enter = child;
+        child->up = child;
+        child->down = child;
+        child->back = parent;
+    }
+    else
+    {
+        // 后续子节点
+        menu_unit_t* last = page_tracker[page_idx].last_child;
+
+        // 插入到链表尾部
+        last->down = child;
+        child->up = last;
+        child->down = page_tracker[page_idx].first_child;
+        child->back = parent;
+
+        page_tracker[page_idx].first_child->up = child;
+        page_tracker[page_idx].last_child = child;
+    }
+}
+
+/**
  * @brief  菜单处理函数
  */
 void menu_process(void)
@@ -912,49 +989,6 @@ static menu_unit_t *menu_root = NULL;
  */
 void menu_example_create(void)
 {
-    // 注册参数到配置系统
-    config_register_item("servo_center", &servo_center, CONFIG_TYPE_FLOAT, &servo_center, "Servo Center");
-    config_register_item("servo_left_max", &servo_left_max, CONFIG_TYPE_FLOAT, &servo_left_max, "Servo Left Max");
-    config_register_item("servo_right_max", &servo_right_max, CONFIG_TYPE_FLOAT, &servo_right_max, "Servo Right Max");
-    config_register_item("servo_kp", &servo_kp, CONFIG_TYPE_FLOAT, &servo_kp, "Servo Kp");
-
-    config_register_item("motor_kp", &motor_kp, CONFIG_TYPE_FLOAT, &motor_kp, "Motor Kp");
-    config_register_item("motor_ki", &motor_ki, CONFIG_TYPE_FLOAT, &motor_ki, "Motor Ki");
-    config_register_item("motor_kd", &motor_kd, CONFIG_TYPE_FLOAT, &motor_kd, "Motor Kd");
-    config_register_item("motor_basic_speed", &motor_basic_speed, CONFIG_TYPE_INT16, &motor_basic_speed, "Basic Speed");
-    config_register_item("motor_vofa_enable", &motor_vofa_enable, CONFIG_TYPE_UINT8, &motor_vofa_enable, "Speed Loop Debug");
-
-    config_register_item("image_threshold", &image_threshold, CONFIG_TYPE_UINT16, &image_threshold, "Image Threshold");
-    config_register_item("image_exposure", &image_exposure, CONFIG_TYPE_UINT16, &image_exposure, "Image Exposure");
-    config_register_item("image_gain", &image_gain, CONFIG_TYPE_FLOAT, &image_gain, "Image Gain");
-
-    // ========== 图像处理参数注册 ==========
-    config_register_item("reference_row", &reference_row, CONFIG_TYPE_UINT8, &reference_row, "Reference Row");
-    config_register_item("cfg_reference_col", &cfg_reference_col, CONFIG_TYPE_UINT8, &cfg_reference_col, "Reference Col");
-    config_register_item("whitemaxmul", &whitemaxmul, CONFIG_TYPE_UINT8, &whitemaxmul, "White Max Mul");
-    config_register_item("whiteminmul", &whiteminmul, CONFIG_TYPE_UINT8, &whiteminmul, "White Min Mul");
-    config_register_item("blackpoint", &blackpoint, CONFIG_TYPE_UINT8, &blackpoint, "Black Point");
-    config_register_item("contrastoffset", &contrastoffset, CONFIG_TYPE_UINT8, &contrastoffset, "Contrast Offset");
-    config_register_item("stoprow", &stoprow, CONFIG_TYPE_UINT8, &stoprow, "Stop Row");
-    config_register_item("searchrange", &searchrange, CONFIG_TYPE_UINT8, &searchrange, "Search Range");
-    config_register_item("stretch_num", &stretch_num, CONFIG_TYPE_UINT8, &stretch_num, "Stretch Num");
-    config_register_item("mid_weight_select", &mid_weight_select, CONFIG_TYPE_UINT16, &mid_weight_select, "Weight Select");
-    config_register_item("cross_enable", &cross_enable, CONFIG_TYPE_UINT16, &cross_enable, "Cross Enable");
-
-    // 动态权重参数
-    config_register_item("dynamic_weight_enable", &dynamic_weight_enable, CONFIG_TYPE_UINT16, &dynamic_weight_enable, "Dynamic Weight");
-    config_register_item("curvature_far_threshold", &curvature_far_threshold, CONFIG_TYPE_UINT16, &curvature_far_threshold, "Curv Far Thr");
-    config_register_item("curvature_near_threshold", &curvature_near_threshold, CONFIG_TYPE_UINT16, &curvature_near_threshold, "Curv Near Thr");
-    config_register_item("weight_hold_time", &weight_hold_time, CONFIG_TYPE_UINT16, &weight_hold_time, "Weight Hold Time");
-    config_register_item("weight_shift_speed", &weight_shift_speed, CONFIG_TYPE_UINT16, &weight_shift_speed, "Weight Shift Spd");
-    config_register_item("curvature_filter_ratio", &curvature_filter_ratio, CONFIG_TYPE_FLOAT, &curvature_filter_ratio, "Curv Filter");
-
-    // 环岛参数
-    config_register_item("circle_1_time", &circle_1_time, CONFIG_TYPE_UINT16, &circle_1_time, "Circle 1 Time");
-    config_register_item("circle_2_time", &circle_2_time, CONFIG_TYPE_UINT16, &circle_2_time, "Circle 2 Time");
-    config_register_item("circle_4_time", &circle_4_time, CONFIG_TYPE_UINT16, &circle_4_time, "Circle 4 Time");
-    config_register_item("circle_5_time", &circle_5_time, CONFIG_TYPE_UINT16, &circle_5_time, "Circle 5 Time");
-
     // ========== 一级菜单 ==========
     menu_root = menu_create_unit("Main Menu", MENU_UNIT_PAGE);
 
@@ -969,22 +1003,22 @@ void menu_example_create(void)
     menu_unit_t *motor_page = menu_create_unit("Motor", MENU_UNIT_PAGE);
     menu_unit_t *image_page = menu_create_unit("Image", MENU_UNIT_PAGE);
 
-    // ========== Servo三级参数 ==========
-    menu_unit_t *servo_param1 = menu_create_param("servo_center", &servo_center, CONFIG_TYPE_FLOAT, 10.0f, 4, 0);
-    menu_unit_t *servo_param2 = menu_create_param("left_max", &servo_left_max, CONFIG_TYPE_FLOAT, 10.0f, 4, 0);
-    menu_unit_t *servo_param3 = menu_create_param("right_max", &servo_right_max, CONFIG_TYPE_FLOAT, 10.0f, 4, 0);
-    menu_unit_t *servo_param4 = menu_create_param("servo_kp", &servo_kp, CONFIG_TYPE_FLOAT, 0.1f, 2, 1);
+    // ========== Servo三级参数 (使用简化宏,每个参数只需1行!) ==========
+    MENU_ADD_PARAM_AUTO(servo_param1, &servo_center, CONFIG_TYPE_FLOAT, 10.0f, 4, 0, "Servo Center", servo_page);
+    MENU_ADD_PARAM_AUTO(servo_param2, &servo_left_max, CONFIG_TYPE_FLOAT, 10.0f, 4, 0, "Servo Left Max", servo_page);
+    MENU_ADD_PARAM_AUTO(servo_param3, &servo_right_max, CONFIG_TYPE_FLOAT, 10.0f, 4, 0, "Servo Right Max", servo_page);
+    MENU_ADD_PARAM_AUTO(servo_param4, &servo_kp, CONFIG_TYPE_FLOAT, 0.1f, 2, 1, "Servo Kp", servo_page);
 
-    // ========== Motor三级参数 ==========
-    menu_unit_t *motor_param1 = menu_create_param("motor_kp", &motor_kp, CONFIG_TYPE_FLOAT, 0.1f, 2, 2);
-    menu_unit_t *motor_param2 = menu_create_param("motor_ki", &motor_ki, CONFIG_TYPE_FLOAT, 0.1f, 2, 2);
-    menu_unit_t *motor_param3 = menu_create_param("motor_kd", &motor_kd, CONFIG_TYPE_FLOAT, 0.1f, 2, 2);
-    menu_unit_t *motor_param4 = menu_create_param("basic_speed", &motor_basic_speed, CONFIG_TYPE_INT16, 10.0f, 3, 0);
+    // ========== Motor三级参数 (使用简化宏) ==========
+    MENU_ADD_PARAM_AUTO(motor_param1, &motor_kp, CONFIG_TYPE_FLOAT, 0.1f, 2, 2, "Motor Kp", motor_page);
+    MENU_ADD_PARAM_AUTO(motor_param2, &motor_ki, CONFIG_TYPE_FLOAT, 0.1f, 2, 2, "Motor Ki", motor_page);
+    MENU_ADD_PARAM_AUTO(motor_param3, &motor_kd, CONFIG_TYPE_FLOAT, 0.1f, 2, 2, "Motor Kd", motor_page);
+    MENU_ADD_PARAM_AUTO(motor_param4, &motor_basic_speed, CONFIG_TYPE_INT16, 10.0f, 3, 0, "Basic Speed", motor_page);
 
-    // ========== Image三级参数 ==========
-    menu_unit_t *image_param1 = menu_create_param("threshold", &image_threshold, CONFIG_TYPE_UINT16, 5.0f, 3, 0);
-    menu_unit_t *image_param2 = menu_create_param("exposure", &image_exposure, CONFIG_TYPE_UINT16, 10.0f, 3, 0);
-    menu_unit_t *image_param3 = menu_create_param("gain", &image_gain, CONFIG_TYPE_FLOAT, 0.1f, 1, 1);
+    // ========== Image三级参数 (使用简化宏) ==========
+    MENU_ADD_PARAM_AUTO(image_param1, &image_threshold, CONFIG_TYPE_UINT16, 5.0f, 3, 0, "Image Threshold", image_page);
+    MENU_ADD_PARAM_AUTO(image_param2, &image_exposure, CONFIG_TYPE_UINT16, 10.0f, 3, 0, "Image Exposure", image_page);
+    MENU_ADD_PARAM_AUTO(image_param3, &image_gain, CONFIG_TYPE_FLOAT, 0.1f, 1, 1, "Image Gain", image_page);
 
     // ========== Save_config二级菜单 ==========
     menu_unit_t *save_slot1 = menu_create_function("Slot 1", menu_func_save_slot1);
@@ -1014,26 +1048,11 @@ void menu_example_create(void)
     menu_link(debug, load_config, car_start, debug_show_image, NULL);  // 循环：下一个是car_start，无back
 
     // Parameter二级菜单链接（循环）
-    menu_link(servo_page, image_page, motor_page, servo_param1, parameter);  // 循环：上一个是image_page
-    menu_link(motor_page, servo_page, image_page, motor_param1, parameter);
-    menu_link(image_page, motor_page, servo_page, image_param1, parameter);  // 循环：下一个是servo_page
+    menu_link(servo_page, image_page, motor_page, NULL, parameter);  // 循环：上一个是image_page, enter已由auto_link设置
+    menu_link(motor_page, servo_page, image_page, NULL, parameter);  // enter已由auto_link设置
+    menu_link(image_page, motor_page, servo_page, NULL, parameter);  // 循环：下一个是servo_page, enter已由auto_link设置
 
-    // Servo三级参数链接（循环）
-    menu_link(servo_param1, servo_param4, servo_param2, NULL, servo_page);   // 循环
-    menu_link(servo_param2, servo_param1, servo_param3, NULL, servo_page);
-    menu_link(servo_param3, servo_param2, servo_param4, NULL, servo_page);
-    menu_link(servo_param4, servo_param3, servo_param1, NULL, servo_page);   // 循环
-
-    // Motor三级参数链接（循环）
-    menu_link(motor_param1, motor_param4, motor_param2, NULL, motor_page);   // 循环
-    menu_link(motor_param2, motor_param1, motor_param3, NULL, motor_page);
-    menu_link(motor_param3, motor_param2, motor_param4, NULL, motor_page);
-    menu_link(motor_param4, motor_param3, motor_param1, NULL, motor_page);   // 循环
-
-    // Image三级参数链接（循环）
-    menu_link(image_param1, image_param3, image_param2, NULL, image_page);   // 循环
-    menu_link(image_param2, image_param1, image_param3, NULL, image_page);
-    menu_link(image_param3, image_param2, image_param1, NULL, image_page);   // 循环
+    // 三级参数链接已由MENU_ADD_PARAM_AUTO自动完成,无需手动链接!
 
     // Save_config二级菜单链接（循环）
     menu_link(save_slot1, save_slot4, save_slot2, NULL, save_config);        // 循环
@@ -1052,7 +1071,7 @@ void menu_example_create(void)
     menu_link(debug_test, debug_show_image, debug_speed_loop, NULL, debug);
     menu_link(debug_speed_loop, debug_test, debug_show_image, NULL, debug);        // 循环
 
-    printf("[MENU_EXAMPLE] Three-level menu created\r\n");
+    printf("[MENU_EXAMPLE] Three-level menu created (using auto-link for params)\r\n");
 }
 
 /**

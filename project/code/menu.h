@@ -215,4 +215,38 @@ void menu_example_create(void);
  */
 void menu_example_enter(void);
 
+// ==================== 简化参数注册宏 ====================
+
+/**
+ * @brief  自动链接子节点到父页面
+ * @param  child: 子节点
+ * @param  parent: 父页面
+ * @return 无
+ * @note   内部维护每个页面的子节点链表，自动完成链接
+ */
+void menu_auto_link_child(menu_unit_t* child, menu_unit_t* parent);
+
+/**
+ * @brief  简化参数添加宏
+ * @param  var_name: 变量名（用作菜单单元变量名）
+ * @param  var_ptr: 参数指针
+ * @param  type: 参数类型
+ * @param  delta: 调整增量
+ * @param  num_int: 整数位数
+ * @param  num_dec: 小数位数
+ * @param  display_name: 显示名称
+ * @param  parent_page: 父页面
+ * @note   自动完成：创建参数单元 + 注册到config系统 + 链接到父页面
+ *
+ * 用法示例:
+ *   MENU_ADD_PARAM_AUTO(servo_param1, &servo_center, CONFIG_TYPE_FLOAT, 10.0f, 4, 0, "Servo Center", servo_page);
+ */
+#define MENU_ADD_PARAM_AUTO(var_name, var_ptr, type, delta, num_int, num_dec, display_name, parent_page) \
+    do { \
+        static menu_unit_t* var_name = NULL; \
+        var_name = menu_create_param(#var_name, var_ptr, type, delta, num_int, num_dec); \
+        config_register_item(#var_name, var_ptr, type, var_ptr, display_name); \
+        menu_auto_link_child(var_name, parent_page); \
+    } while(0)
+
 #endif
