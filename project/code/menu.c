@@ -427,7 +427,13 @@ static void menu_edit_param(int8 direction)
     switch (current_unit->param_type)
     {
         case CONFIG_TYPE_FLOAT:
-            *(float *)current_unit->param_ptr += change;
+            {
+                float old_val = *(float *)current_unit->param_ptr;
+                *(float *)current_unit->param_ptr += change;
+                float new_val = *(float *)current_unit->param_ptr;
+                printf("[MENU_EDIT] %s: %.2f -> %.2f (ptr=0x%08X)\r\n",
+                       current_unit->name, old_val, new_val, (uint32)current_unit->param_ptr);
+            }
             break;
         case CONFIG_TYPE_DOUBLE:
             *(double *)current_unit->param_ptr += (double)change;
@@ -1001,11 +1007,35 @@ void menu_example_create(void)
     MENU_ADD_PARAM_AUTO(servo_param3, &servo_right_max, CONFIG_TYPE_FLOAT, 10.0f, 4, 0, "Servo Right Max", servo_page);
     MENU_ADD_PARAM_AUTO(servo_param4, &servo_kp, CONFIG_TYPE_FLOAT, 0.1f, 2, 1, "Servo Kp", servo_page);
 
-    // ========== Motor三级参数 (使用简化宏) ==========
-    MENU_ADD_PARAM_AUTO(motor_kp, &motor_kp, CONFIG_TYPE_FLOAT, 0.1f, 2, 2, "Motor Kp", motor_page);
-    MENU_ADD_PARAM_AUTO(motor_ki, &motor_ki, CONFIG_TYPE_FLOAT, 0.1f, 2, 2, "Motor Ki", motor_page);
-    MENU_ADD_PARAM_AUTO(motor_kd, &motor_kd, CONFIG_TYPE_FLOAT, 0.1f, 2, 2, "Motor Kd", motor_page);
-    MENU_ADD_PARAM_AUTO(basic_speed, &motor_basic_speed, CONFIG_TYPE_INT16, 10.0f, 3, 0, "Basic Speed", motor_page);
+    // ========== Motor三级参数 (手动注册，使用正确的默认值) ==========
+    // 定义默认值
+    static float motor_kp_default = 1.0f;    // PID默认Kp=1.0
+    static float motor_ki_default = 0.5f;    // PID默认Ki=0.5
+    static float motor_kd_default = 0.1f;    // PID默认Kd=0.1
+    static int16 motor_speed_default = 100;  // 默认速度100
+
+    // 创建菜单单元
+    static menu_unit_t* motor_kp_unit = NULL;
+    static menu_unit_t* motor_ki_unit = NULL;
+    static menu_unit_t* motor_kd_unit = NULL;
+    static menu_unit_t* motor_speed_unit = NULL;
+
+    motor_kp_unit = menu_create_param("Motor Kp", &motor_kp, CONFIG_TYPE_FLOAT, 0.1f, 2, 2);
+    motor_ki_unit = menu_create_param("Motor Ki", &motor_ki, CONFIG_TYPE_FLOAT, 0.1f, 2, 2);
+    motor_kd_unit = menu_create_param("Motor Kd", &motor_kd, CONFIG_TYPE_FLOAT, 0.1f, 2, 2);
+    motor_speed_unit = menu_create_param("Basic Speed", &motor_basic_speed, CONFIG_TYPE_INT16, 10.0f, 3, 0);
+
+    // 注册到配置系统（使用正确的默认值）
+    config_register_item("motor_kp", &motor_kp, CONFIG_TYPE_FLOAT, &motor_kp_default, "Motor Kp");
+    config_register_item("motor_ki", &motor_ki, CONFIG_TYPE_FLOAT, &motor_ki_default, "Motor Ki");
+    config_register_item("motor_kd", &motor_kd, CONFIG_TYPE_FLOAT, &motor_kd_default, "Motor Kd");
+    config_register_item("motor_speed", &motor_basic_speed, CONFIG_TYPE_INT16, &motor_speed_default, "Basic Speed");
+
+    // 链接到父页面
+    menu_auto_link_child(motor_kp_unit, motor_page);
+    menu_auto_link_child(motor_ki_unit, motor_page);
+    menu_auto_link_child(motor_kd_unit, motor_page);
+    menu_auto_link_child(motor_speed_unit, motor_page);
 
     // ========== Image三级参数 (使用简化宏) ==========
     MENU_ADD_PARAM_AUTO(image_param1, &image_threshold, CONFIG_TYPE_UINT16, 5.0f, 3, 0, "Image Threshold", image_page);
