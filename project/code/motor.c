@@ -188,11 +188,29 @@ static void motor_set_pwm_right(int16 pwm)
     {
         pwm_set_duty(MOTOR_RIGHT_A, pwm);
         pwm_set_duty(MOTOR_RIGHT_B, 0);
+
+        // 调试输出（每100次打印一次）
+        static uint16 debug_cnt_r = 0;
+        debug_cnt_r++;
+        if (debug_cnt_r >= 100 && pwm > 0)
+        {
+            debug_cnt_r = 0;
+            printf("[PWM_RIGHT] Direction=FWD  A=%d B=0 (pwm=%d)\r\n", pwm, pwm);
+        }
     }
     else  // 反转
     {
         pwm_set_duty(MOTOR_RIGHT_A, 0);
         pwm_set_duty(MOTOR_RIGHT_B, -pwm);
+
+        // 调试输出
+        static uint16 debug_cnt_r2 = 0;
+        debug_cnt_r2++;
+        if (debug_cnt_r2 >= 100)
+        {
+            debug_cnt_r2 = 0;
+            printf("[PWM_RIGHT] Direction=REV  A=0 B=%d (pwm=%d)\r\n", -pwm, pwm);
+        }
     }
 }
 
