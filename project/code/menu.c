@@ -591,7 +591,11 @@ void menu_link(menu_unit_t *current, menu_unit_t *up, menu_unit_t *down,
 
     current->up = up;
     current->down = down;
-    current->enter = enter;
+
+    // 只有当enter不为NULL时才设置，避免覆盖auto_link设置的enter指针
+    if (enter != NULL)
+        current->enter = enter;
+
     current->back = back;
 }
 
@@ -1014,6 +1018,7 @@ void menu_example_create(void)
     MENU_ADD_PARAM_AUTO(motor_param2, &motor_ki, CONFIG_TYPE_FLOAT, 0.1f, 2, 2, "Motor Ki", motor_page);
     MENU_ADD_PARAM_AUTO(motor_param3, &motor_kd, CONFIG_TYPE_FLOAT, 0.1f, 2, 2, "Motor Kd", motor_page);
     MENU_ADD_PARAM_AUTO(motor_param4, &motor_basic_speed, CONFIG_TYPE_INT16, 10.0f, 3, 0, "Basic Speed", motor_page);
+    MENU_ADD_PARAM_AUTO(motor_param5, &motor_vofa_enable, CONFIG_TYPE_UINT8, 1.0f, 1, 0, "Speed Loop Debug", motor_page);
 
     // ========== Image三级参数 (使用简化宏) ==========
     MENU_ADD_PARAM_AUTO(image_param1, &image_threshold, CONFIG_TYPE_UINT16, 5.0f, 3, 0, "Image Threshold", image_page);
