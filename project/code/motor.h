@@ -33,7 +33,6 @@ void motor_init(void);                                                     // �
 void motor_set_target_left(int16 target);                                  // 设置左电机目标值(编码器增量)
 void motor_set_target_right(int16 target);                                 // 设置右电机目标值(编码器增量)
 void motor_process(void);                                                  // 电机控制周期(10ms调用一次)
-void motor_set_pid(float kp, float ki, float kd);                          // 设置PID参数
 void motor_vofa_send(void);                                                // 发送VOFA+调试数据
 
 #endif // _MOTOR_H_

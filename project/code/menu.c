@@ -400,9 +400,6 @@ static void menu_navigate_back(void)
         // 退出编辑模式时自动保存（掉电不丢失）
         config_auto_save();
 
-        // 如果修改了电机PID参数，更新PID控制器
-        motor_set_pid(motor_kp, motor_ki, motor_kd);
-
         return;
     }
 
@@ -713,7 +710,6 @@ void menu_process(void)
             case MENU_KEY_BACK:
                 edit_mode = 0;          // 退出编辑模式
                 config_auto_save();     // 自动保存（掉电不丢失）
-                motor_set_pid(motor_kp, motor_ki, motor_kd);  // 更新电机PID参数
                 menu_display_item(current_unit, current_line, 1, 0);  // 刷新为选中状态
                 break;
             default:

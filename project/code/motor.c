@@ -208,24 +208,3 @@ void motor_vofa_send(void)
     // 通过调试串口发送(二进制数据)
     uart_write_buffer(DEBUG_UART_INDEX, vofa_buffer, 16);
 }
-
-/*********************************************************************************************************************
-* 函数名称: motor_set_pid
-* 功能说明: 设置PID参数(左右电机共享)
-* 参数说明: kp - 比例系数
-*           ki - 积分系数
-*           kd - 微分系数
-* 返回值:   无
-********************************************************************************************************************/
-void motor_set_pid(float kp, float ki, float kd)
-{
-    motor_kp = kp;
-    motor_ki = ki;
-    motor_kd = kd;
-
-    // 重新初始化PID控制器，使新参数立即生效
-    pid_reset(&pid_left);
-    pid_reset(&pid_right);
-
-    printf("[MOTOR] PID updated - Kp=%.2f Ki=%.2f Kd=%.2f\r\n", motor_kp, motor_ki, motor_kd);
-}
