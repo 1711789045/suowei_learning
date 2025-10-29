@@ -114,9 +114,28 @@ void motor_process(void)
     motor_set_pwm_left((int16)pid_out_left);
     motor_set_pwm_right((int16)pid_out_right);
 
-    // VOFA+调试输出
+    // ========== 详细PID调试输出（速度环调试模式） ==========
     if (motor_vofa_enable)
     {
+        static uint8 debug_cnt = 0;
+        debug_cnt++;
+        if (debug_cnt >= 10)  // 每100ms打印一次（10*10ms）
+        {
+            debug_cnt = 0;
+
+            // 打印右轮详细信息
+            float target_r = (float)target_right;
+            float actual_r = (float)actual_right;
+            float error_r = target_r - actual_r;
+
+            printf("[MOTOR_R] Target=%d Actual=%d Err=%.1f | PID_out=%.1f PWM=%d | Output=%.1f\r\n",
+                   target_right, actual_right, error_r, pid_out_right, (int16)pid_out_right, pid_right.output);
+
+            // 打印PID参数
+            printf("[PID_PARAM] Kp=%.2f Ki=%.2f Kd=%.2f\r\n", motor_kp, motor_ki, motor_kd);
+        }
+
+        // VOFA+输出
         motor_vofa_send();
     }
 }
