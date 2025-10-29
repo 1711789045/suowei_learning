@@ -24,8 +24,9 @@
 #define MOTOR_PWM_FREQ          (17000)                                    // PWM频率 17kHz
 #define MOTOR_PWM_MAX_DUTY      (10000)                                    // 最大占空比限制(0-10000对应0%-100%)
 
-// VOFA+调试开关(外部可访问)
-extern uint8 motor_vofa_enable;                                            // 1=开启VOFA+输出, 0=关闭
+// VOFA+速度环调试(外部可访问)
+extern uint8 motor_vofa_enable;                                            // 1=开启速度环调试, 0=关闭
+extern int16 motor_basic_speed;                                            // 速度环基础速度(编码器增量目标值)
 
 // API函数声明
 void motor_init(void);                                                     // 初始化电机系统

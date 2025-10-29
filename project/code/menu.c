@@ -920,7 +920,8 @@ void menu_example_create(void)
     config_register_item("motor_kp", &motor_kp, CONFIG_TYPE_FLOAT, &motor_kp, "Motor Kp");
     config_register_item("motor_ki", &motor_ki, CONFIG_TYPE_FLOAT, &motor_ki, "Motor Ki");
     config_register_item("motor_kd", &motor_kd, CONFIG_TYPE_FLOAT, &motor_kd, "Motor Kd");
-    config_register_item("motor_vofa_enable", &motor_vofa_enable, CONFIG_TYPE_UINT8, &motor_vofa_enable, "VOFA Enable");
+    config_register_item("motor_basic_speed", &motor_basic_speed, CONFIG_TYPE_INT16, &motor_basic_speed, "Basic Speed");
+    config_register_item("motor_vofa_enable", &motor_vofa_enable, CONFIG_TYPE_UINT8, &motor_vofa_enable, "Speed Loop Debug");
 
     config_register_item("image_threshold", &image_threshold, CONFIG_TYPE_UINT16, &image_threshold, "Image Threshold");
     config_register_item("image_exposure", &image_exposure, CONFIG_TYPE_UINT16, &image_exposure, "Image Exposure");
@@ -977,6 +978,7 @@ void menu_example_create(void)
     menu_unit_t *motor_param1 = menu_create_param("motor_kp", &motor_kp, CONFIG_TYPE_FLOAT, 0.1f, 2, 2);
     menu_unit_t *motor_param2 = menu_create_param("motor_ki", &motor_ki, CONFIG_TYPE_FLOAT, 0.1f, 2, 2);
     menu_unit_t *motor_param3 = menu_create_param("motor_kd", &motor_kd, CONFIG_TYPE_FLOAT, 0.1f, 2, 2);
+    menu_unit_t *motor_param4 = menu_create_param("basic_speed", &motor_basic_speed, CONFIG_TYPE_INT16, 10.0f, 4, 0);
 
     // ========== Image三级参数 ==========
     menu_unit_t *image_param1 = menu_create_param("threshold", &image_threshold, CONFIG_TYPE_UINT16, 5.0f, 3, 0);
@@ -998,7 +1000,7 @@ void menu_example_create(void)
     // ========== Debug二级菜单 ==========
     menu_unit_t *debug_show_image = menu_create_function("Show Image", menu_func_show_image);
     menu_unit_t *debug_test = menu_create_function("Test Function", menu_func_test);
-    menu_unit_t *debug_vofa = menu_create_param("VOFA Debug", &motor_vofa_enable, CONFIG_TYPE_UINT8, 1.0f, 0, 0);
+    menu_unit_t *debug_speed_loop = menu_create_param("Speed Loop", &motor_vofa_enable, CONFIG_TYPE_UINT8, 1.0f, 0, 0);
 
     // ==================== 链接菜单 ====================
 
@@ -1022,9 +1024,10 @@ void menu_example_create(void)
     menu_link(servo_param4, servo_param3, servo_param1, NULL, servo_page);   // 循环
 
     // Motor三级参数链接（循环）
-    menu_link(motor_param1, motor_param3, motor_param2, NULL, motor_page);   // 循环
+    menu_link(motor_param1, motor_param4, motor_param2, NULL, motor_page);   // 循环
     menu_link(motor_param2, motor_param1, motor_param3, NULL, motor_page);
-    menu_link(motor_param3, motor_param2, motor_param1, NULL, motor_page);   // 循环
+    menu_link(motor_param3, motor_param2, motor_param4, NULL, motor_page);
+    menu_link(motor_param4, motor_param3, motor_param1, NULL, motor_page);   // 循环
 
     // Image三级参数链接（循环）
     menu_link(image_param1, image_param3, image_param2, NULL, image_page);   // 循环
@@ -1044,9 +1047,9 @@ void menu_example_create(void)
     menu_link(load_slot4, load_slot3, load_slot1, NULL, load_config);        // 循环
 
     // Debug二级菜单链接（循环）
-    menu_link(debug_show_image, debug_vofa, debug_test, NULL, debug);        // 循环
-    menu_link(debug_test, debug_show_image, debug_vofa, NULL, debug);
-    menu_link(debug_vofa, debug_test, debug_show_image, NULL, debug);        // 循环
+    menu_link(debug_show_image, debug_speed_loop, debug_test, NULL, debug);        // 循环
+    menu_link(debug_test, debug_show_image, debug_speed_loop, NULL, debug);
+    menu_link(debug_speed_loop, debug_test, debug_show_image, NULL, debug);        // 循环
 
     printf("[MENU_EXAMPLE] Three-level menu created\r\n");
 }

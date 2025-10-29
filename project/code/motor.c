@@ -20,8 +20,9 @@ static int16 target_right = 0;
 static int16 actual_left = 0;
 static int16 actual_right = 0;
 
-// VOFA+调试开关(1=开启, 0=关闭)
-uint8 motor_vofa_enable = 0;
+// VOFA+速度环调试
+uint8 motor_vofa_enable = 0;        // 速度环调试开关(1=开启, 0=关闭)
+int16 motor_basic_speed = 100;      // 速度环基础速度(默认100，编码器增量目标值)
 
 // 内部函数声明
 static void motor_set_pwm_left(int16 pwm);
@@ -94,6 +95,13 @@ void motor_set_target_right(int16 target)
 ********************************************************************************************************************/
 void motor_process(void)
 {
+    // 速度环调试模式：设置目标速度为basic_speed
+    if (motor_vofa_enable)
+    {
+        target_left = motor_basic_speed;
+        target_right = motor_basic_speed;
+    }
+
     // 读取编码器实际值(已滤波)
     actual_left = encoder_get_left();
     actual_right = encoder_get_right();
@@ -171,35 +179,34 @@ static void motor_set_pwm_right(int16 pwm)
 
 /*********************************************************************************************************************
 * 函数名称: motor_vofa_send
-* 功能说明: 发送VOFA+ JustFloat调试数据
+* 功能说明: 发送VOFA+ JustFloat调试数据(速度环调试)
 * 参数说明: 无
 * 返回值:   无
-* 备注:     发送4个通道: target_left, actual_left, target_right, actual_right
-*           协议: 4×float32 + 尾巴(0x00 0x00 0x80 0x7f)
+* 备注:     发送3个通道: actual_left, actual_right, target_speed
+*           协议: 3×float32 + 尾巴(0x00 0x00 0x80 0x7f)
 ********************************************************************************************************************/
 void motor_vofa_send(void)
 {
-    // VOFA+ JustFloat协议: 4个float + 4字节尾巴
-    uint8 vofa_buffer[20];  // 4×4 + 4 = 20字节
-    float data[4];
+    // VOFA+ JustFloat协议: 3个float + 4字节尾巴
+    uint8 vofa_buffer[16];  // 3×4 + 4 = 16字节
+    float data[3];
 
     // 准备数据(int16→float转换)
-    data[0] = (float)target_left;
-    data[1] = (float)actual_left;
-    data[2] = (float)target_right;
-    data[3] = (float)actual_right;
+    data[0] = (float)actual_left;       // 左编码器实际速度
+    data[1] = (float)actual_right;      // 右编码器实际速度
+    data[2] = (float)motor_basic_speed; // 目标速度
 
     // 拷贝float数据到缓冲区
-    memcpy(vofa_buffer, data, 16);
+    memcpy(vofa_buffer, data, 12);
 
     // 添加JustFloat协议尾巴
-    vofa_buffer[16] = 0x00;
-    vofa_buffer[17] = 0x00;
-    vofa_buffer[18] = 0x80;
-    vofa_buffer[19] = 0x7f;
+    vofa_buffer[12] = 0x00;
+    vofa_buffer[13] = 0x00;
+    vofa_buffer[14] = 0x80;
+    vofa_buffer[15] = 0x7f;
 
     // 通过调试串口发送(二进制数据)
-    uart_write_buffer(DEBUG_UART_INDEX, vofa_buffer, 20);
+    uart_write_buffer(DEBUG_UART_INDEX, vofa_buffer, 16);
 }
 
 /*********************************************************************************************************************
