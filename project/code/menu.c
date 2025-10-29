@@ -978,7 +978,7 @@ void menu_example_create(void)
     menu_unit_t *motor_param1 = menu_create_param("motor_kp", &motor_kp, CONFIG_TYPE_FLOAT, 0.1f, 2, 2);
     menu_unit_t *motor_param2 = menu_create_param("motor_ki", &motor_ki, CONFIG_TYPE_FLOAT, 0.1f, 2, 2);
     menu_unit_t *motor_param3 = menu_create_param("motor_kd", &motor_kd, CONFIG_TYPE_FLOAT, 0.1f, 2, 2);
-    menu_unit_t *motor_param4 = menu_create_param("basic_speed", &motor_basic_speed, CONFIG_TYPE_INT16, 10.0f, 4, 0);
+    menu_unit_t *motor_param4 = menu_create_param("basic_speed", &motor_basic_speed, CONFIG_TYPE_INT16, 10.0f, 3, 0);
 
     // ========== Image三级参数 ==========
     menu_unit_t *image_param1 = menu_create_param("threshold", &image_threshold, CONFIG_TYPE_UINT16, 5.0f, 3, 0);
