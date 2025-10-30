@@ -78,6 +78,114 @@ git push origin main
 
 ---
 
+## 📝 代码规范
+
+### 文件编码格式（重要）
+
+**强制要求**: 所有源代码文件必须使用 **UTF-8 编码**
+
+#### 为什么使用UTF-8？
+- ✅ 正确显示中文注释和字符串
+- ✅ 跨平台兼容性好（Windows/Linux/Mac）
+- ✅ Git版本控制友好
+- ✅ IAR编译器完全支持
+- ❌ 避免GB2312/GBK编码导致的乱码问题
+
+#### 编码规范检查清单
+在创建或修改文件时，必须确保：
+1. ✅ **新建文件**: 使用UTF-8编码保存
+2. ✅ **修改文件**: 检查原文件编码，如非UTF-8需转换
+3. ✅ **中文内容**: 所有中文注释、字符串必须在UTF-8文件中
+4. ✅ **文件头注释**: 包含中文的版权声明必须使用UTF-8
+5. ✅ **提交前检查**: 确认中文显示正常，无乱码
+
+#### 常见乱码原因
+- ❌ 使用GBK/GB2312编码保存包含中文的文件
+- ❌ 不同编辑器打开时编码不一致
+- ❌ Windows记事本默认ANSI编码
+- ❌ 从旧项目复制的文件编码不一致
+
+#### 编码转换方法
+
+**方法1: 使用VS Code**
+1. 打开文件后查看右下角编码显示
+2. 点击编码名称 → 选择"通过编码重新打开" → 选择当前编码
+3. 再次点击编码 → 选择"通过编码保存" → 选择"UTF-8"
+
+**方法2: 使用Cursor（推荐）**
+1. 右下角查看当前编码
+2. 点击编码 → "Reopen with Encoding" → 选择当前编码
+3. 再次点击 → "Save with Encoding" → 选择 "UTF-8"
+
+**方法3: 命令行批量转换（Windows PowerShell）**
+```powershell
+# 转换单个文件
+Get-Content -Path "file.c" -Encoding Default | Set-Content -Path "file.c" -Encoding UTF8
+
+# 批量转换当前目录所有.c和.h文件
+Get-ChildItem -Filter *.c | ForEach-Object {
+    $content = Get-Content $_.FullName -Encoding Default
+    Set-Content -Path $_.FullName -Value $content -Encoding UTF8
+}
+Get-ChildItem -Filter *.h | ForEach-Object {
+    $content = Get-Content $_.FullName -Encoding Default
+    Set-Content -Path $_.FullName -Value $content -Encoding UTF8
+}
+```
+
+#### 验证编码正确性
+```bash
+# Linux/Mac: 使用file命令检查编码
+file -i *.c *.h
+
+# Windows: 在编辑器中打开，检查中文是否正常显示
+# 或使用 chcp 65001 切换到UTF-8后查看文件
+```
+
+#### 项目文件编码状态
+当前项目所有用户代码文件已确认使用UTF-8编码：
+- ✅ `Car_project/project/code/*.c` - UTF-8
+- ✅ `Car_project/project/code/*.h` - UTF-8  
+- ✅ `Car_project/project/user/*.c` - UTF-8
+- ✅ `CLAUDE.md` - UTF-8
+- ✅ `DEVELOPMENT_LOG.md` - UTF-8
+
+### 命名规范
+- **变量命名**: 小写字母+下划线 (如: `motor_speed`, `sensor_data`)
+- **函数命名**: 小写字母+下划线 (如: `motor_init()`, `get_sensor_value()`)
+- **宏定义**: 大写字母+下划线 (如: `MAX_SPEED`, `MOTOR_PWM_FREQ`)
+- **文件命名**: 小写字母+下划线 (如: `motor.c`, `pid_control.h`)
+
+### 代码风格
+- **缩进**: 4个空格（不使用Tab）
+- **大括号**: K&R风格（左括号不换行）
+- **注释**: 使用中文注释（UTF-8编码）
+- **每行长度**: 建议不超过120字符
+- **函数长度**: 建议不超过50行（复杂函数除外）
+
+### 文件头注释模板
+```c
+/*********************************************************************************************************************
+* CYT2BL3 Opensourec Library 即（CYT2BL3 开源库）是一个基于官方 SDK 接口的第三方开源库
+* Copyright (c) 2022 SEEKFREE 逐飞科技
+*
+* 本文件是CYT2BL3 开源库的一部分
+*
+* CYT2BL3 开源库 是免费软件
+* 您可以根据自由软件基金会发布的 GPL（GNU General Public License，即 GNU通用公共许可证）的条款
+* 即 GPL 的第3版（即 GPL3.0）或（您选择的）任何后来的版本，重新发布和/或修改它
+*
+* 文件名称          <文件名>
+* 功能说明          <功能描述>
+* 作者              <作者名>
+* 日期              <创建日期>
+********************************************************************************************************************/
+```
+
+**注意**: 此文件头包含中文，必须确保文件使用 **UTF-8 编码** 保存！
+
+---
+
 ## 项目概述
 
 这是逐飞科技基于英飞凌CYT2BL3（Traveo II）MCU开发的开源库,专为智能车竞赛和产品开发设计。该库在英飞凌官方SDL基础上进行了封装,简化了API使用。

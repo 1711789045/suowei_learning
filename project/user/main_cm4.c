@@ -154,16 +154,7 @@ int main(void)
         // 菜单系统处理
         if(menu_is_active())
         {
-            // 降低打印频率，每1秒打印一次（避免刷屏）
-            static uint16 print_cnt = 0;
-            print_cnt++;
-            if(print_cnt >= 100)  // 100 * 10ms = 1000ms
-            {
-                print_cnt = 0;
-                printf("[PID] Kp=%.2f Ki=%.2f Kd=%.2f (addr: Kp=0x%08X Ki=0x%08X Kd=0x%08X)\r\n",
-                       motor_kp, motor_ki, motor_kd,
-                       (uint32)&motor_kp, (uint32)&motor_ki, (uint32)&motor_kd);
-            }
+
             menu_process();             // 处理菜单逻辑 (按键、显示、编辑等)
             system_delay_ms(10);        // 10ms延时，100Hz刷新率
         }

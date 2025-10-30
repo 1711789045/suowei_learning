@@ -12,17 +12,22 @@
 #include "encoder.h"
 #include "pid.h"
 
-// 左电机PWM引脚定义(HIP4082驱动)
-#define MOTOR_LEFT_A            (TCPWM_CH14_P00_2)                         // 左电机A相
-#define MOTOR_LEFT_B            (TCPWM_CH13_P00_3)                         // 左电机B相
+// ==================== DRV8701E 驱动引脚定义 ====================
+// DRV8701E控制方式：DIR（方向GPIO）+ PWM（速度PWM）
+// DIR=HIGH + PWM → 正转
+// DIR=LOW  + PWM → 反转
 
-// 右电机PWM引脚定义(HIP4082驱动)
-#define MOTOR_RIGHT_A           (TCPWM_CH51_P18_6)                         // 右电机A相
-#define MOTOR_RIGHT_B           (TCPWM_CH50_P18_7)                         // 右电机B相
+// 左电机引脚（电机2）
+#define MOTOR_LEFT_DIR          (P18_6)                                    // 左电机方向控制（普通GPIO）
+#define MOTOR_LEFT_PWM          (TCPWM_CH50_P18_7)                         // 左电机速度控制（PWM）
+
+// 右电机引脚（电机1）
+#define MOTOR_RIGHT_DIR         (P00_2)                                    // 右电机方向控制（普通GPIO）
+#define MOTOR_RIGHT_PWM         (TCPWM_CH13_P00_3)                         // 右电机速度控制（PWM）
 
 // PWM参数
 #define MOTOR_PWM_FREQ          (17000)                                    // PWM频率 17kHz
-#define MOTOR_PWM_MAX_DUTY      (10000)                                    // 最大占空比限制(0-10000对应0%-100%)
+#define MOTOR_PWM_MAX_DUTY      (1000)                                    // 最大占空比限制(0-10000对应0%-100%)
 
 // VOFA+速度环调试(外部可访问)
 extern uint8 motor_vofa_enable;                                            // 1=开启速度环调试, 0=关闭

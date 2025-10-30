@@ -42,8 +42,12 @@
 void pit0_ch0_isr()                     // 定时器通道 0 中断服务函数
 {
     pit_isr_flag_clear(PIT_CH0);        // 清除中断标志
-
-    motor_process();                    // 10ms电机控制周期
+    
+    if(motor_vofa_enable)
+    {
+        // ✅ 已完成引脚测试，恢复motor_process()
+        motor_process();  // 10ms电机控制周期
+    }
 }
 
 void pit0_ch1_isr()                     // 定时器通道 1 中断服务函数

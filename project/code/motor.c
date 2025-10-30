@@ -36,11 +36,13 @@ static void motor_set_pwm_right(int16 pwm);
 ********************************************************************************************************************/
 void motor_init(void)
 {
-    // 初始化PWM (HIP4082驱动, 17kHz, 初始占空比0)
-    pwm_init(MOTOR_LEFT_A, MOTOR_PWM_FREQ, 0);
-    pwm_init(MOTOR_LEFT_B, MOTOR_PWM_FREQ, 0);
-    pwm_init(MOTOR_RIGHT_A, MOTOR_PWM_FREQ, 0);
-    pwm_init(MOTOR_RIGHT_B, MOTOR_PWM_FREQ, 0);
+    // 初始化DIR引脚 (DRV8701E驱动方向控制, 默认高电平=正转)
+    gpio_init(MOTOR_LEFT_DIR, GPO, GPIO_HIGH, GPO_PUSH_PULL);
+    gpio_init(MOTOR_RIGHT_DIR, GPO, GPIO_HIGH, GPO_PUSH_PULL);
+    
+    // 初始化PWM (DRV8701E驱动速度控制, 17kHz, 初始占空比0)
+    pwm_init(MOTOR_LEFT_PWM, MOTOR_PWM_FREQ, 0);
+    pwm_init(MOTOR_RIGHT_PWM, MOTOR_PWM_FREQ, 0);
 
     // 初始化编码器
     encoder_init();
@@ -61,7 +63,7 @@ void motor_init(void)
     // 关闭VOFA+调试
     motor_vofa_enable = 0;
 
-    printf("[MOTOR] Init OK - PWM:17kHz Left:CH14/13 Right:CH51/50\r\n");
+    printf("[MOTOR] Init OK - DRV8701E Left:P18_6/CH50 Right:P00_2/CH13\r\n");
 }
 
 /*********************************************************************************************************************
@@ -142,10 +144,10 @@ void motor_process(void)
 
 /*********************************************************************************************************************
 * 函数名称: motor_set_pwm_left
-* 功能说明: 设置左电机PWM(带方向控制)
+* 功能说明: 设置左电机PWM(DRV8701E驱动方式)
 * 参数说明: pwm - PWM值(正数=正转, 负数=反转, 0=停止)
 * 返回值:   无
-* 备注:     自动限幅到[-MOTOR_PWM_MAX_DUTY, +MOTOR_PWM_MAX_DUTY]
+* 备注:     DRV8701E: DIR引脚控制方向, PWM通道控制速度
 ********************************************************************************************************************/
 static void motor_set_pwm_left(int16 pwm)
 {
@@ -155,25 +157,25 @@ static void motor_set_pwm_left(int16 pwm)
     else if (pwm < -MOTOR_PWM_MAX_DUTY)
         pwm = -MOTOR_PWM_MAX_DUTY;
 
-    // 根据符号控制方向
+    // DRV8701E控制方式
     if (pwm >= 0)  // 正转
     {
-        pwm_set_duty(MOTOR_LEFT_A, pwm);
-        pwm_set_duty(MOTOR_LEFT_B, 0);
+        gpio_set_level(MOTOR_LEFT_DIR, GPIO_HIGH);  // DIR=HIGH 正转
+        pwm_set_duty(MOTOR_LEFT_PWM, pwm);          // PWM设置速度
     }
     else  // 反转
     {
-        pwm_set_duty(MOTOR_LEFT_A, 0);
-        pwm_set_duty(MOTOR_LEFT_B, -pwm);
+        gpio_set_level(MOTOR_LEFT_DIR, GPIO_LOW);   // DIR=LOW 反转
+        pwm_set_duty(MOTOR_LEFT_PWM, -pwm);         // PWM设置速度(取绝对值)
     }
 }
 
 /*********************************************************************************************************************
 * 函数名称: motor_set_pwm_right
-* 功能说明: 设置右电机PWM(带方向控制)
+* 功能说明: 设置右电机PWM(DRV8701E驱动方式)
 * 参数说明: pwm - PWM值(正数=正转, 负数=反转, 0=停止)
 * 返回值:   无
-* 备注:     自动限幅到[-MOTOR_PWM_MAX_DUTY, +MOTOR_PWM_MAX_DUTY]
+* 备注:     DRV8701E: DIR引脚控制方向, PWM通道控制速度
 ********************************************************************************************************************/
 static void motor_set_pwm_right(int16 pwm)
 {
@@ -183,34 +185,16 @@ static void motor_set_pwm_right(int16 pwm)
     else if (pwm < -MOTOR_PWM_MAX_DUTY)
         pwm = -MOTOR_PWM_MAX_DUTY;
 
-    // 根据符号控制方向
+    // DRV8701E控制方式
     if (pwm >= 0)  // 正转
     {
-        pwm_set_duty(MOTOR_RIGHT_A, pwm);
-        pwm_set_duty(MOTOR_RIGHT_B, 0);
-
-        // 调试输出（每100次打印一次）
-        static uint16 debug_cnt_r = 0;
-        debug_cnt_r++;
-        if (debug_cnt_r >= 100 && pwm > 0)
-        {
-            debug_cnt_r = 0;
-            printf("[PWM_RIGHT] Direction=FWD  A=%d B=0 (pwm=%d)\r\n", pwm, pwm);
-        }
+        gpio_set_level(MOTOR_RIGHT_DIR, GPIO_HIGH);  // DIR=HIGH 正转
+        pwm_set_duty(MOTOR_RIGHT_PWM, pwm);          // PWM设置速度
     }
     else  // 反转
     {
-        pwm_set_duty(MOTOR_RIGHT_A, 0);
-        pwm_set_duty(MOTOR_RIGHT_B, -pwm);
-
-        // 调试输出
-        static uint16 debug_cnt_r2 = 0;
-        debug_cnt_r2++;
-        if (debug_cnt_r2 >= 100)
-        {
-            debug_cnt_r2 = 0;
-            printf("[PWM_RIGHT] Direction=REV  A=0 B=%d (pwm=%d)\r\n", -pwm, pwm);
-        }
+        gpio_set_level(MOTOR_RIGHT_DIR, GPIO_LOW);   // DIR=LOW 反转
+        pwm_set_duty(MOTOR_RIGHT_PWM, -pwm);         // PWM设置速度(取绝对值)
     }
 }
 
