@@ -4,6 +4,130 @@
 
 ---
 
+## 2025-10-31
+
+### 串级PID控制系统实现与硬件驱动修复
+
+**工作内容**:
+1. ✅ 修正电机驱动芯片类型
+   - 识别实际硬件为 **DRV8701E**（不是HIP4082）
+   - DRV8701E控制方式：DIR(GPIO方向) + PWM(速度)
+   - 通过引脚测试确定正确的引脚映射：
+     * 左电机：DIR=P18_6, PWM=CH50_P18_7
+     * 右电机：DIR=P00_2, PWM=CH13_P00_3
+   - 重写motor.c的PWM控制函数（motor_set_pwm_left/right）
+
+2. ✅ 修正编码器方向问题
+   - 发现左右编码器方向都反了（正转读到负值）
+   - 在encoder_get_left()中添加取反操作
+   - 解决速度环正反馈导致电机疯转的问题
+
+3. ✅ 实现串级PID控制系统
+   - **外环（方向环）**: 10ms周期，位置式PID
+     * 输入：final_mid_line - IMAGE_W/2（中线偏差）
+     * 输出：差速控制量
+     * 根据偏差计算左右轮差速目标值
+   - **内环（速度环）**: 5ms周期，增量式PID
+     * 输入：编码器速度
+     * 输出：PWM控制量
+     * 跟踪方向环设定的差速目标
+
+4. ✅ PID模块重构（pid.h/pid.c）
+   - 变量重命名：
+     * motor_kp/ki/kd → speed_kp/ki/kd（速度环）
+     * 新增：direction_kp/ki/kd（方向环）
+   - 添加位置式PID函数：pid_calc_position()
+   - 重命名增量式PID函数：pid_calc() → pid_calc_incremental()
+   - PID状态结构体添加integral字段（位置式PID用）
+
+5. ✅ 电机模块重构（motor.h/motor.c）
+   - 变量重命名：
+     * motor_vofa_enable → speed_debug_enable
+     * motor_basic_speed → basic_speed
+   - 新增变量：
+     * direction_debug_enable（方向环调试开关）
+     * inner_wheel_ratio（内轮减速系数）
+     * outer_wheel_ratio（外轮加速系数）
+   - 重写motor_process()函数：
+     * 实现串级PID控制逻辑
+     * 方向环10ms计算差速
+     * 速度环5ms跟踪目标
+
+6. ✅ 差速转向控制逻辑
+   - 偏左（mid_error>0）→ 需要右转：
+     * 左轮（外轮）加速：basic_speed + output × outer_ratio
+     * 右轮（内轮）减速：basic_speed - output × inner_ratio
+   - 偏右（mid_error<0）→ 需要左转：
+     * 左轮（内轮）减速：basic_speed + output × inner_ratio
+     * 右轮（外轮）加速：basic_speed - output × outer_ratio
+
+7. ✅ 菜单系统更新（menu.c）
+   - 子菜单重命名：
+     * "Servo" → "DirectionPID"（方向环参数）
+     * "Motor" → "SpeedPID"（速度环参数）
+   - 参数重新注册：
+     * 方向环：direction_kp/ki/kd, inner_ratio, outer_ratio
+     * 速度环：speed_kp/ki/kd, basic_speed
+   - Debug菜单新增：
+     * SpeedDebug（速度环调试开关）
+     * DirectionDebug（方向环调试开关）
+
+8. ✅ 控制周期调整
+   - 定时器中断：10ms → 5ms (main_cm4.c, cm4_isr.c)
+   - 速度环：每5ms执行一次
+   - 方向环：每10ms执行一次（计数器控制）
+
+9. ✅ 调试逻辑优化
+   - 速度环调试模式：只执行速度环，双轮同速
+   - 方向环调试模式：自动启用速度环（串级PID）
+   - 调试输出：100ms周期，显示中线偏差、目标值、实际值、PWM
+
+10. ✅ 编码规范
+    - 更新CLAUDE.md：添加UTF-8编码规范章节
+    - 包含编码检查清单、转换方法、常见问题等
+
+**技术亮点**:
+- ✨ **串级PID架构**：外环控制方向，内环控制速度，解耦控制
+- ✨ **差速转向**：内外轮独立比例系数，精确控制转弯
+- ✨ **双周期控制**：方向环10ms，速度环5ms，提升响应速度
+- ✨ **灵活调试**：支持独立调试速度环或串级调试方向环
+- ✨ **位置式+增量式**：方向环无累积误差，速度环抗干扰
+
+**参数说明**:
+```
+速度环（增量式PID）:
+├── speed_kp: 比例系数
+├── speed_ki: 积分系数
+├── speed_kd: 微分系数
+└── basic_speed: 基础速度（编码器增量）
+
+方向环（位置式PID）:
+├── direction_kp: 比例系数
+├── direction_ki: 积分系数
+├── direction_kd: 微分系数
+├── inner_wheel_ratio: 内轮减速系数
+└── outer_wheel_ratio: 外轮加速系数
+```
+
+**调试流程**:
+1. 先调试速度环：speed_debug=1, direction_debug=0
+2. 再调试方向环：direction_debug=1（自动启用速度环）
+3. PID参数从0开始，逐步增大调试
+
+**下一步计划**:
+- 在实车上测试速度环响应
+- 调试方向环PID参数
+- 优化差速系数（inner_ratio, outer_ratio）
+- 测试循迹效果
+
+**已解决的问题**:
+1. ✅ 硬件驱动识别错误（HIP4082 → DRV8701E）
+2. ✅ 引脚映射错误（通过4阶段测试确定）
+3. ✅ 编码器方向反向（取反修正）
+4. ✅ 速度环正反馈问题（编码器方向导致）
+
+---
+
 ## 2025-10-26
 
 ### 菜单系统移植与集成
