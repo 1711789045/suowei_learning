@@ -37,6 +37,9 @@ float outer_wheel_ratio = 1.0f;     // 外轮加速系数(默认1.0)
 // 方向环控制周期计数器(5ms中断，每2次执行1次方向环=10ms)
 static uint8 direction_counter = 0;
 
+// 方向环调试状态记录（用于检测0→1跳变）
+static uint8 last_direction_debug_enable = 0;
+
 // 内部函数声明
 static void motor_set_pwm_left(int16 pwm);
 static void motor_set_pwm_right(int16 pwm);
@@ -120,6 +123,23 @@ void motor_set_target_right(int16 target)
 ********************************************************************************************************************/
 void motor_process(void)
 {
+    // ==================== 方向环调试状态检测 ====================
+    // 检测direction_debug_enable从0变为1（新开启）
+    if (direction_debug_enable == 1 && last_direction_debug_enable == 0)
+    {
+        // 清除方向环PID状态
+        pid_reset(&pid_direction);
+        
+        // 清除速度环PID状态
+        pid_reset(&pid_speed_left);
+        pid_reset(&pid_speed_right);
+        
+        printf("[MOTOR] Direction debug enabled - PID states reset\r\n");
+    }
+    
+    // 更新状态记录
+    last_direction_debug_enable = direction_debug_enable;
+    
     // ==================== 方向环控制 (10ms周期) ====================
     if (direction_debug_enable)
     {

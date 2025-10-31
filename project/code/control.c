@@ -116,7 +116,7 @@ void start_car(void)
  * @param  无
  * @return 无
  * @note   立即关闭方向环 → 速度环目标置0 → 延时1s刹车
- *         → 关闭速度环 → PWM置0 → 开启菜单
+ *         → 关闭速度环 → PWM置0 → 显示提示 → 等待按键 → 开启菜单
  */
 void stop_car(void)
 {
@@ -140,7 +140,30 @@ void stop_car(void)
     // 6. 设置停止状态
     car_running = 0;
     
-    // 7. 开启菜单
+    // 7. 显示停车提示信息
+    ips114_clear();
+    ips114_show_string(30, 40, "CAR STOPPED!");
+    ips114_show_string(20, 60, "Press KEY4 to");
+    ips114_show_string(30, 80, "return menu");
+    
+    // 8. 等待按下KEY4返回键
+    while(1)
+    {
+        // 扫描按键
+        key_scanner();
+        
+        // 检测KEY4（返回键）
+        if(key_get_state(KEY_4) == KEY_SHORT_PRESS || 
+           key_get_state(KEY_4) == KEY_LONG_PRESS)
+        {
+            key_clear_state(KEY_4);  // 清除按键状态
+            break;  // 退出等待循环
+        }
+        
+        system_delay_ms(20);  // 20ms延时
+    }
+    
+    // 9. 开启菜单
     menu_example_enter();
 }
 
