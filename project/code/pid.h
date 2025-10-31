@@ -10,22 +10,32 @@
 
 #include "zf_common_headfile.h"
 
-// PID状态结构体(每个控制对象独立的状态) - 增量式PID
+// PID状态结构体(每个控制对象独立的状态)
 typedef struct
 {
+    // 增量式PID用
     float error_last;           // 上次误差 e(k-1)
     float error_last2;          // 上上次误差 e(k-2)
     float output;               // 当前输出累积值
+    
+    // 位置式PID用
+    float integral;             // 积分累积值
 } pid_t;
 
-// 全局PID参数(左右电机共享,通过菜单调参)
-extern float motor_kp;          // 比例系数
-extern float motor_ki;          // 积分系数
-extern float motor_kd;          // 微分系数
+// ==================== 速度环PID参数 ====================
+extern float speed_kp;          // 速度环比例系数
+extern float speed_ki;          // 速度环积分系数
+extern float speed_kd;          // 速度环微分系数
+
+// ==================== 方向环PID参数 ====================
+extern float direction_kp;      // 方向环比例系数
+extern float direction_ki;      // 方向环积分系数
+extern float direction_kd;      // 方向环微分系数
 
 // API函数声明
 void pid_init(void);                                                       // 初始化PID参数
 void pid_reset(pid_t *pid);                                                // 重置PID状态
-float pid_calc(pid_t *pid, float target, float actual);                    // 计算PID输出
+float pid_calc_incremental(pid_t *pid, float target, float actual);        // 增量式PID（速度环用）
+float pid_calc_position(pid_t *pid, float target, float actual);           // 位置式PID（方向环用）
 
 #endif // _PID_H_

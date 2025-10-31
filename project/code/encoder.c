@@ -55,7 +55,7 @@ int16 encoder_get_left(void)
     encoder_left_last = filtered;
 
     // ⚠️ 取反修正方向（正转时读到负值，需要反向）
-    return -filtered;
+    return filtered;
 }
 
 /*********************************************************************************************************************
@@ -80,6 +80,5 @@ int16 encoder_get_right(void)
     // 保存本次滤波值供下次使用
     encoder_right_last = filtered;
 
-    // ⚠️ 取反修正方向（实测：正转时读到负值，需要反向）
     return -filtered;
 }

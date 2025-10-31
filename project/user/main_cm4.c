@@ -80,10 +80,10 @@ void system_init(void)
     motor_init();
     printf("OK\r\n");
 
-    // 4. 定时器中断初始化 (10ms电机控制周期)
-    printf("[4/8] Timer interrupt (10ms)...");
-    pit_ms_init(PIT_CH0, 10);
-    printf("OK\r\n");
+    // 4. 定时器中断初始化 (5ms电机控制周期)
+    printf("[4/8] Timer interrupt (5ms)...");
+    pit_ms_init(PIT_CH0, 5);
+    printf("OK (Speed:5ms Direction:10ms)\r\n");
 
     // 5. 摄像头初始化 (MT9V03X 188x120@120FPS)
     printf("[5/8] Camera MT9V03X initialization...");

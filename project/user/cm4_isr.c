@@ -43,10 +43,11 @@ void pit0_ch0_isr()                     // 定时器通道 0 中断服务函数
 {
     pit_isr_flag_clear(PIT_CH0);        // 清除中断标志
     
-    if(motor_vofa_enable)
+    // 方向环调试开启时，速度环自动开启（串级PID）
+    // 或者只开启速度环调试
+    if(direction_debug_enable || speed_debug_enable)
     {
-        // ✅ 已完成引脚测试，恢复motor_process()
-        motor_process();  // 10ms电机控制周期
+        motor_process();  // 5ms电机控制周期（串级PID：方向环10ms+速度环5ms）
     }
 }
 

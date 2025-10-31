@@ -958,26 +958,28 @@ void menu_func_test(void)
 /**
  * @brief  VOFA+调试开关（功能函数-已废弃，改用参数方式）
  */
-void menu_func_vofa_toggle(void)
+void menu_func_speed_debug_toggle(void)
 {
-    motor_vofa_enable = !motor_vofa_enable;
+    speed_debug_enable = !speed_debug_enable;
+}
+
+void menu_func_direction_debug_toggle(void)
+{
+    direction_debug_enable = !direction_debug_enable;
 }
 
 // ==================== 菜单示例 ====================
-
-// 舵机参数
-static float servo_center = 1500.0f;
-static float servo_left_max = 1800.0f;
-static float servo_right_max = 1200.0f;
-static float servo_kp = 1.0f;
-
-// 电机参数使用pid.h中的全局变量: motor_kp, motor_ki, motor_kd
-// VOFA+开关使用motor.h中的全局变量: motor_vofa_enable
 
 // 图像参数
 static uint16 image_threshold = 128;
 static uint16 image_exposure = 100;
 static float image_gain = 1.0f;
+
+// 速度环参数使用pid.h中的全局变量: speed_kp, speed_ki, speed_kd
+// 方向环参数使用pid.h中的全局变量: direction_kp, direction_ki, direction_kd
+// 基础速度使用motor.h中的全局变量: basic_speed
+// 调试开关使用motor.h中的全局变量: speed_debug_enable, direction_debug_enable
+// 差速系数使用motor.h中的全局变量: inner_wheel_ratio, outer_wheel_ratio
 
 // 菜单单元指针
 static menu_unit_t *menu_root = NULL;
@@ -997,45 +999,74 @@ void menu_example_create(void)
     menu_unit_t *debug = menu_create_unit("Debug", MENU_UNIT_PAGE);
 
     // ========== Parameter二级菜单 ==========
-    menu_unit_t *servo_page = menu_create_unit("Servo", MENU_UNIT_PAGE);
-    menu_unit_t *motor_page = menu_create_unit("Motor", MENU_UNIT_PAGE);
+    menu_unit_t *direction_page = menu_create_unit("DirectionPID", MENU_UNIT_PAGE);  // 方向环
+    menu_unit_t *speed_page = menu_create_unit("SpeedPID", MENU_UNIT_PAGE);          // 速度环
     menu_unit_t *image_page = menu_create_unit("Image", MENU_UNIT_PAGE);
 
-    // ========== Servo三级参数 (使用简化宏,每个参数只需1行!) ==========
-    MENU_ADD_PARAM_AUTO(servo_param1, &servo_center, CONFIG_TYPE_FLOAT, 10.0f, 4, 0, "Servo Center", servo_page);
-    MENU_ADD_PARAM_AUTO(servo_param2, &servo_left_max, CONFIG_TYPE_FLOAT, 10.0f, 4, 0, "Servo Left Max", servo_page);
-    MENU_ADD_PARAM_AUTO(servo_param3, &servo_right_max, CONFIG_TYPE_FLOAT, 10.0f, 4, 0, "Servo Right Max", servo_page);
-    MENU_ADD_PARAM_AUTO(servo_param4, &servo_kp, CONFIG_TYPE_FLOAT, 0.1f, 2, 1, "Servo Kp", servo_page);
-
-    // ========== Motor三级参数 (手动注册，使用正确的默认值) ==========
+    // ========== 方向环三级参数 (位置式PID+差速系数) ==========
     // 定义默认值
-    static float motor_kp_default = 1.0f;    // PID默认Kp=1.0
-    static float motor_ki_default = 0.5f;    // PID默认Ki=0.5
-    static float motor_kd_default = 0.1f;    // PID默认Kd=0.1
-    static int16 motor_speed_default = 100;  // 默认速度100
+    static float direction_kp_default = 0.0f;
+    static float direction_ki_default = 0.0f;
+    static float direction_kd_default = 0.0f;
+    static float inner_ratio_default = 1.0f;
+    static float outer_ratio_default = 1.0f;
+    
+    // 创建菜单单元
+    static menu_unit_t* direction_kp_unit = NULL;
+    static menu_unit_t* direction_ki_unit = NULL;
+    static menu_unit_t* direction_kd_unit = NULL;
+    static menu_unit_t* inner_ratio_unit = NULL;
+    static menu_unit_t* outer_ratio_unit = NULL;
+    
+    direction_kp_unit = menu_create_param("Dir Kp", &direction_kp, CONFIG_TYPE_FLOAT, 0.1f, 2, 2);
+    direction_ki_unit = menu_create_param("Dir Ki", &direction_ki, CONFIG_TYPE_FLOAT, 0.01f, 2, 3);
+    direction_kd_unit = menu_create_param("Dir Kd", &direction_kd, CONFIG_TYPE_FLOAT, 0.1f, 2, 2);
+    inner_ratio_unit = menu_create_param("Inner Ratio", &inner_wheel_ratio, CONFIG_TYPE_FLOAT, 0.1f, 2, 2);
+    outer_ratio_unit = menu_create_param("Outer Ratio", &outer_wheel_ratio, CONFIG_TYPE_FLOAT, 0.1f, 2, 2);
+    
+    // 注册到配置系统
+    config_register_item("direction_kp", &direction_kp, CONFIG_TYPE_FLOAT, &direction_kp_default, "Dir Kp");
+    config_register_item("direction_ki", &direction_ki, CONFIG_TYPE_FLOAT, &direction_ki_default, "Dir Ki");
+    config_register_item("direction_kd", &direction_kd, CONFIG_TYPE_FLOAT, &direction_kd_default, "Dir Kd");
+    config_register_item("inner_ratio", &inner_wheel_ratio, CONFIG_TYPE_FLOAT, &inner_ratio_default, "Inner Ratio");
+    config_register_item("outer_ratio", &outer_wheel_ratio, CONFIG_TYPE_FLOAT, &outer_ratio_default, "Outer Ratio");
+    
+    // 链接到父页面
+    menu_auto_link_child(direction_kp_unit, direction_page);
+    menu_auto_link_child(direction_ki_unit, direction_page);
+    menu_auto_link_child(direction_kd_unit, direction_page);
+    menu_auto_link_child(inner_ratio_unit, direction_page);
+    menu_auto_link_child(outer_ratio_unit, direction_page);
+
+    // ========== 速度环三级参数 (增量式PID+基础速度) ==========
+    // 定义默认值
+    static float speed_kp_default = 0.0f;
+    static float speed_ki_default = 0.0f;
+    static float speed_kd_default = 0.0f;
+    static int16 basic_speed_default = 100;
 
     // 创建菜单单元
-    static menu_unit_t* motor_kp_unit = NULL;
-    static menu_unit_t* motor_ki_unit = NULL;
-    static menu_unit_t* motor_kd_unit = NULL;
-    static menu_unit_t* motor_speed_unit = NULL;
+    static menu_unit_t* speed_kp_unit = NULL;
+    static menu_unit_t* speed_ki_unit = NULL;
+    static menu_unit_t* speed_kd_unit = NULL;
+    static menu_unit_t* basic_speed_unit = NULL;
 
-    motor_kp_unit = menu_create_param("Motor Kp", &motor_kp, CONFIG_TYPE_FLOAT, 0.1f, 2, 2);
-    motor_ki_unit = menu_create_param("Motor Ki", &motor_ki, CONFIG_TYPE_FLOAT, 0.1f, 2, 2);
-    motor_kd_unit = menu_create_param("Motor Kd", &motor_kd, CONFIG_TYPE_FLOAT, 0.1f, 2, 2);
-    motor_speed_unit = menu_create_param("Basic Speed", &motor_basic_speed, CONFIG_TYPE_INT16, 10.0f, 3, 0);
+    speed_kp_unit = menu_create_param("Speed Kp", &speed_kp, CONFIG_TYPE_FLOAT, 0.1f, 2, 2);
+    speed_ki_unit = menu_create_param("Speed Ki", &speed_ki, CONFIG_TYPE_FLOAT, 0.1f, 2, 2);
+    speed_kd_unit = menu_create_param("Speed Kd", &speed_kd, CONFIG_TYPE_FLOAT, 0.1f, 2, 2);
+    basic_speed_unit = menu_create_param("Basic Speed", &basic_speed, CONFIG_TYPE_INT16, 10.0f, 3, 0);
 
-    // 注册到配置系统（使用正确的默认值）
-    config_register_item("motor_kp", &motor_kp, CONFIG_TYPE_FLOAT, &motor_kp_default, "Motor Kp");
-    config_register_item("motor_ki", &motor_ki, CONFIG_TYPE_FLOAT, &motor_ki_default, "Motor Ki");
-    config_register_item("motor_kd", &motor_kd, CONFIG_TYPE_FLOAT, &motor_kd_default, "Motor Kd");
-    config_register_item("motor_speed", &motor_basic_speed, CONFIG_TYPE_INT16, &motor_speed_default, "Basic Speed");
+    // 注册到配置系统
+    config_register_item("speed_kp", &speed_kp, CONFIG_TYPE_FLOAT, &speed_kp_default, "Speed Kp");
+    config_register_item("speed_ki", &speed_ki, CONFIG_TYPE_FLOAT, &speed_ki_default, "Speed Ki");
+    config_register_item("speed_kd", &speed_kd, CONFIG_TYPE_FLOAT, &speed_kd_default, "Speed Kd");
+    config_register_item("basic_speed", &basic_speed, CONFIG_TYPE_INT16, &basic_speed_default, "Basic Speed");
 
     // 链接到父页面
-    menu_auto_link_child(motor_kp_unit, motor_page);
-    menu_auto_link_child(motor_ki_unit, motor_page);
-    menu_auto_link_child(motor_kd_unit, motor_page);
-    menu_auto_link_child(motor_speed_unit, motor_page);
+    menu_auto_link_child(speed_kp_unit, speed_page);
+    menu_auto_link_child(speed_ki_unit, speed_page);
+    menu_auto_link_child(speed_kd_unit, speed_page);
+    menu_auto_link_child(basic_speed_unit, speed_page);
 
     // ========== Image三级参数 (使用简化宏) ==========
     MENU_ADD_PARAM_AUTO(image_param1, &image_threshold, CONFIG_TYPE_UINT16, 5.0f, 3, 0, "Image Threshold", image_page);
@@ -1057,22 +1088,23 @@ void menu_example_create(void)
     // ========== Debug二级菜单 ==========
     menu_unit_t *debug_show_image = menu_create_function("Show Image", menu_func_show_image);
     menu_unit_t *debug_test = menu_create_function("Test Function", menu_func_test);
-    menu_unit_t *debug_speed_loop = menu_create_param("Speed Loop", &motor_vofa_enable, CONFIG_TYPE_UINT8, 1.0f, 0, 0);
+    menu_unit_t *debug_speed_loop = menu_create_param("SpeedDebug", &speed_debug_enable, CONFIG_TYPE_UINT8, 1.0f, 1, 0);
+    menu_unit_t *debug_direction_loop = menu_create_param("DirectionDebug", &direction_debug_enable, CONFIG_TYPE_UINT8, 1.0f, 1, 0);
 
     // ==================== 链接菜单 ====================
 
     // 一级菜单链接（循环），back为NULL表示顶层菜单
     menu_link(menu_root, NULL, car_start, car_start, NULL);
     menu_link(car_start, debug, parameter, NULL, NULL);          // 循环：上一个是debug，无back
-    menu_link(parameter, car_start, save_config, servo_page, NULL);
+    menu_link(parameter, car_start, save_config, direction_page, NULL);  // enter进入方向环页
     menu_link(save_config, parameter, load_config, save_slot1, NULL);
     menu_link(load_config, save_config, debug, load_slot1, NULL);
     menu_link(debug, load_config, car_start, debug_show_image, NULL);  // 循环：下一个是car_start，无back
 
     // Parameter二级菜单链接（循环）
-    menu_link(servo_page, image_page, motor_page, NULL, parameter);  // 循环：上一个是image_page, enter已由auto_link设置
-    menu_link(motor_page, servo_page, image_page, NULL, parameter);  // enter已由auto_link设置
-    menu_link(image_page, motor_page, servo_page, NULL, parameter);  // 循环：下一个是servo_page, enter已由auto_link设置
+    menu_link(direction_page, image_page, speed_page, NULL, parameter);  // 循环：方向环页
+    menu_link(speed_page, direction_page, image_page, NULL, parameter);  // 速度环页
+    menu_link(image_page, speed_page, direction_page, NULL, parameter);  // 循环：图像页
 
     // 三级参数链接已由MENU_ADD_PARAM_AUTO自动完成,无需手动链接!
 
@@ -1089,9 +1121,10 @@ void menu_example_create(void)
     menu_link(load_slot4, load_slot3, load_slot1, NULL, load_config);        // 循环
 
     // Debug二级菜单链接（循环）
-    menu_link(debug_show_image, debug_speed_loop, debug_test, NULL, debug);        // 循环
+    menu_link(debug_show_image, debug_direction_loop, debug_test, NULL, debug);           // 循环
     menu_link(debug_test, debug_show_image, debug_speed_loop, NULL, debug);
-    menu_link(debug_speed_loop, debug_test, debug_show_image, NULL, debug);        // 循环
+    menu_link(debug_speed_loop, debug_test, debug_direction_loop, NULL, debug);
+    menu_link(debug_direction_loop, debug_speed_loop, debug_show_image, NULL, debug);     // 循环
 
 }
 
