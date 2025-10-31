@@ -193,6 +193,11 @@ static uint8 last_line = 0;                        // 上次选中行（用于�
 static uint8 edit_mode = 0;                        // 编辑模式标志
 static uint8 menu_active = 0;                      // 菜单激活标志
 
+// ==================== 延迟更新参数 ====================
+// basic_speed临时变量：编辑时修改此变量，退出编辑才更新到motor.h的basic_speed
+static int16 temp_basic_speed = 100;
+static menu_unit_t *basic_speed_menu_unit = NULL;  // basic_speed菜单项指针（用于判断）
+
 // 菜单导航栈（记住每层菜单的状态）
 #define MENU_STACK_SIZE 10
 typedef struct {
@@ -355,6 +360,12 @@ static void menu_navigate_enter(void)
 
     if (current_unit->type == MENU_UNIT_NORMAL)
     {
+        // ⭐ 进入编辑模式前，同步真实值到临时变量
+        if (current_unit == basic_speed_menu_unit)
+        {
+            temp_basic_speed = basic_speed;  // 同步当前值
+        }
+        
         // 参数项：进入编辑模式（只局部刷新当前行）
         edit_mode = 1;
         menu_display_item(current_unit, current_line, 1, 1);  // 显示为编辑模式颜色
@@ -395,6 +406,14 @@ static void menu_navigate_back(void)
     {
         // 如果在编辑模式，退出编辑模式（只局部刷新当前行）
         edit_mode = 0;
+        
+        // ⭐ 检查是否是basic_speed参数，如果是则更新真实值
+        if (current_unit == basic_speed_menu_unit)
+        {
+            basic_speed = temp_basic_speed;  // 延迟更新：临时变量 → 真实变量
+            printf("[MENU] Basic Speed updated: %d (delayed update)\r\n", basic_speed);
+        }
+        
         menu_display_item(current_unit, current_line, 1, 0);  // 显示为选中模式颜色
 
         // 退出编辑模式时自动保存（掉电不丢失）
@@ -714,6 +733,13 @@ void menu_process(void)
                 break;
             case MENU_KEY_ENTER:
             case MENU_KEY_BACK:
+                // ⭐ 退出编辑模式前，检查是否是basic_speed参数
+                if (current_unit == basic_speed_menu_unit)
+                {
+                    basic_speed = temp_basic_speed;  // 延迟更新：临时变量 → 真实变量
+                    printf("[MENU] Basic Speed updated: %d (delayed update)\r\n", basic_speed);
+                }
+                
                 edit_mode = 0;          // 退出编辑模式
                 config_auto_save();     // 自动保存（掉电不丢失）
                 menu_display_item(current_unit, current_line, 1, 0);  // 刷新为选中状态
@@ -862,6 +888,7 @@ void menu_func_save_slot4(void)
 void menu_func_load_slot1(void)
 {
     config_load_slot(0);
+    temp_basic_speed = basic_speed;  // ⭐ 同步加载后的值到临时变量
     menu_show_message("Loaded from Slot 1");
     menu_refresh();
 }
@@ -872,6 +899,7 @@ void menu_func_load_slot1(void)
 void menu_func_load_slot2(void)
 {
     config_load_slot(1);
+    temp_basic_speed = basic_speed;  // ⭐ 同步加载后的值到临时变量
     menu_show_message("Loaded from Slot 2");
     menu_refresh();
 }
@@ -882,6 +910,7 @@ void menu_func_load_slot2(void)
 void menu_func_load_slot3(void)
 {
     config_load_slot(2);
+    temp_basic_speed = basic_speed;  // ⭐ 同步加载后的值到临时变量
     menu_show_message("Loaded from Slot 3");
     menu_refresh();
 }
@@ -892,6 +921,7 @@ void menu_func_load_slot3(void)
 void menu_func_load_slot4(void)
 {
     config_load_slot(3);
+    temp_basic_speed = basic_speed;  // ⭐ 同步加载后的值到临时变量
     menu_show_message("Loaded from Slot 4");
     menu_refresh();
 }
@@ -977,9 +1007,10 @@ static float image_gain = 1.0f;
 
 // 速度环参数使用pid.h中的全局变量: speed_kp, speed_ki, speed_kd
 // 方向环参数使用pid.h中的全局变量: direction_kp, direction_ki, direction_kd
-// 基础速度使用motor.h中的全局变量: basic_speed
+// 基础速度使用motor.h中的全局变量: basic_speed（通过temp_basic_speed延迟更新）
 // 调试开关使用motor.h中的全局变量: speed_debug_enable, direction_debug_enable
 // 差速系数使用motor.h中的全局变量: inner_wheel_ratio, outer_wheel_ratio
+// 注意：temp_basic_speed和basic_speed_menu_unit已在文件前面定义
 
 // 菜单单元指针
 static menu_unit_t *menu_root = NULL;
@@ -1044,19 +1075,23 @@ void menu_example_create(void)
     static float speed_ki_default = 0.0f;
     static float speed_kd_default = 0.0f;
     static int16 basic_speed_default = 100;
+    
+    // 初始化临时变量（从motor.h的全局变量读取当前值）
+    temp_basic_speed = basic_speed;
 
     // 创建菜单单元
     static menu_unit_t* speed_kp_unit = NULL;
     static menu_unit_t* speed_ki_unit = NULL;
     static menu_unit_t* speed_kd_unit = NULL;
-    static menu_unit_t* basic_speed_unit = NULL;
 
     speed_kp_unit = menu_create_param("Speed Kp", &speed_kp, CONFIG_TYPE_FLOAT, 0.1f, 2, 2);
     speed_ki_unit = menu_create_param("Speed Ki", &speed_ki, CONFIG_TYPE_FLOAT, 0.1f, 2, 2);
     speed_kd_unit = menu_create_param("Speed Kd", &speed_kd, CONFIG_TYPE_FLOAT, 0.1f, 2, 2);
-    basic_speed_unit = menu_create_param("Basic Speed", &basic_speed, CONFIG_TYPE_INT16, 10.0f, 3, 0);
+    
+    // ⭐ basic_speed使用临时变量，退出编辑时才更新真实值
+    basic_speed_menu_unit = menu_create_param("Basic Speed", &temp_basic_speed, CONFIG_TYPE_INT16, 10.0f, 3, 0);
 
-    // 注册到配置系统
+    // 注册到配置系统（注意：注册的是真实变量basic_speed，不是temp）
     config_register_item("speed_kp", &speed_kp, CONFIG_TYPE_FLOAT, &speed_kp_default, "Speed Kp");
     config_register_item("speed_ki", &speed_ki, CONFIG_TYPE_FLOAT, &speed_ki_default, "Speed Ki");
     config_register_item("speed_kd", &speed_kd, CONFIG_TYPE_FLOAT, &speed_kd_default, "Speed Kd");
@@ -1066,7 +1101,7 @@ void menu_example_create(void)
     menu_auto_link_child(speed_kp_unit, speed_page);
     menu_auto_link_child(speed_ki_unit, speed_page);
     menu_auto_link_child(speed_kd_unit, speed_page);
-    menu_auto_link_child(basic_speed_unit, speed_page);
+    menu_auto_link_child(basic_speed_menu_unit, speed_page);
 
     // ========== Image三级参数 (使用简化宏) ==========
     MENU_ADD_PARAM_AUTO(image_param1, &image_threshold, CONFIG_TYPE_UINT16, 5.0f, 3, 0, "Image Threshold", image_page);
