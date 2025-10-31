@@ -43,6 +43,7 @@
 #include "encoder.h"        // 编码器模块
 #include "pid.h"            // PID控制模块
 #include "image.h"          // 图像处理模块
+#include "control.h"        // 发车/停车控制
 
 // 切换工程或工程移动位置后，需要执行以下步骤
 // 第一步 关闭所有打开的文件
@@ -154,18 +155,27 @@ int main(void)
         // 菜单系统处理
         if(menu_is_active())
         {
-
             menu_process();             // 处理菜单逻辑 (按键、显示、编辑等)
-            system_delay_ms(10);        // 10ms延时，100Hz刷新率
+            if(direction_debug_enable)
+                image_process(MT9V03X_W, MT9V03X_H, 0);
+            else
+                system_delay_ms(10);        // 10ms延时，100Hz刷新率
         }
-        else
+        else if(car_running)            // 小车运行模式（发车后）
         {
-            // 图像处理 (只在菜单未激活时执行，避免显示冲突)
+            // 图像处理（不显示，仅计算）
             if(mt9v03x_finish_flag)
             {
-                image_process(MT9V03X_W, MT9V03X_H, 1);  // mode=1: 显示边线
+                image_process(MT9V03X_W, MT9V03X_H, 0);  // mode=0: 不显示
                 mt9v03x_finish_flag = 0;
             }
+            
+            // 停车检测
+            stop_detection();
+        }
+        else                            // 待机模式
+        {
+            system_delay_ms(10);
         }
     }
 }

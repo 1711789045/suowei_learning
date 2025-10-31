@@ -53,11 +53,11 @@ uint8 stop_analyse_line = 40;   // 停止线分析行（从底部数）
 uint8 stop_threshold = 30;      // 停止线检测阈值
 uint8 stretch_num = 80;         // 边线延长数
 uint8 mid_calc_center_row = 90; // 中线计算中心行（从底部数）
-uint16 mid_weight_select = 2;   // 权重数组选择（1-5，默认2）
+uint16 mid_weight_select = 1;   // 权重数组选择（1-5，默认1）
 uint16 cross_enable = 0;        // 十字识别开关（默认关闭）
 
 // ==================== 动态前瞻权重配置参数 ====================
-uint16 dynamic_weight_enable = 1;       // 动态权重开关（0=关闭使用固定权重, 1=开启）
+uint16 dynamic_weight_enable = 0;       // 动态权重开关（0=关闭使用固定权重, 1=开启，默认关闭）
 uint16 curvature_far_threshold = 3;     // 曲率远阈值（小于此值切换到远前瞻）
 uint16 curvature_near_threshold = 12;   // 曲率近阈值（大于此值切换到近前瞻）
 uint16 weight_hold_time = 30;           // 权重保持时间（帧数，30帧≈0.3秒）

@@ -37,15 +37,17 @@
 
 #include "zf_common_headfile.h"
 #include "motor.h"          // 电机控制模块
+#include "control.h"        // 发车/停车控制
 
 // **************************** PIT中断函数 ****************************
 void pit0_ch0_isr()                     // 定时器通道 0 中断服务函数
 {
     pit_isr_flag_clear(PIT_CH0);        // 清除中断标志
     
-    // 方向环调试开启时，速度环自动开启（串级PID）
-    // 或者只开启速度环调试
-    if(direction_debug_enable || speed_debug_enable)
+    // 只在小车运行或调试模式下执行电机控制
+    // 调试模式：方向环调试开启时，速度环自动开启（串级PID）
+    // 运行模式：发车后（car_running=1）
+    if(car_running || direction_debug_enable || speed_debug_enable)
     {
         motor_process();  // 5ms电机控制周期（串级PID：方向环10ms+速度环5ms）
     }

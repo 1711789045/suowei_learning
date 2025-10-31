@@ -38,6 +38,7 @@
 #include "motor.h"          // 电机控制（VOFA+开关）
 #include "flash.h"          // Flash配置管理（自动保存/加载）
 #include "image.h"          // 图像处理模块
+#include "control.h"        // 发车/停车控制
 #include <string.h>
 #include <stdio.h>
 
@@ -838,15 +839,6 @@ static void menu_show_message(const char *msg)
 }
 
 /**
- * @brief  发车函数
- */
-void menu_func_car_start(void)
-{
-    menu_show_message("Car Start!");
-    // TODO: 实现发车逻辑
-}
-
-/**
  * @brief  保存配置到存档位1
  */
 void menu_func_save_slot1(void)
@@ -998,12 +990,15 @@ void menu_func_direction_debug_toggle(void)
     direction_debug_enable = !direction_debug_enable;
 }
 
-// ==================== 菜单示例 ====================
+/**
+ * @brief  发车函数（菜单中调用）
+ */
+void menu_func_car_start(void)
+{
+    start_car();  // 调用control模块的发车函数
+}
 
-// 图像参数
-static uint16 image_threshold = 128;
-static uint16 image_exposure = 100;
-static float image_gain = 1.0f;
+// ==================== 菜单示例 ====================
 
 // 速度环参数使用pid.h中的全局变量: speed_kp, speed_ki, speed_kd
 // 方向环参数使用pid.h中的全局变量: direction_kp, direction_ki, direction_kd
@@ -1103,10 +1098,20 @@ void menu_example_create(void)
     menu_auto_link_child(speed_kd_unit, speed_page);
     menu_auto_link_child(basic_speed_menu_unit, speed_page);
 
-    // ========== Image三级参数 (使用简化宏) ==========
-    MENU_ADD_PARAM_AUTO(image_param1, &image_threshold, CONFIG_TYPE_UINT16, 5.0f, 3, 0, "Image Threshold", image_page);
-    MENU_ADD_PARAM_AUTO(image_param2, &image_exposure, CONFIG_TYPE_UINT16, 10.0f, 3, 0, "Image Exposure", image_page);
-    MENU_ADD_PARAM_AUTO(image_param3, &image_gain, CONFIG_TYPE_FLOAT, 0.1f, 1, 1, "Image Gain", image_page);
+    // ========== Image三级参数 ==========
+    // mid_weight_select: 权重数组选择（1-5）
+    static uint16 mid_weight_select_default = 1;
+    static menu_unit_t* mid_weight_select_unit = NULL;
+    mid_weight_select_unit = menu_create_param("Weight Select", &mid_weight_select, CONFIG_TYPE_UINT16, 1.0f, 1, 0);
+    config_register_item("mid_weight_select", &mid_weight_select, CONFIG_TYPE_UINT16, &mid_weight_select_default, "Weight Select");
+    menu_auto_link_child(mid_weight_select_unit, image_page);
+    
+    // cross_enable: 十字识别开关（0=关闭，1=开启）
+    static uint16 cross_enable_default = 0;
+    static menu_unit_t* cross_enable_unit = NULL;
+    cross_enable_unit = menu_create_param("Cross Enable", &cross_enable, CONFIG_TYPE_UINT16, 1.0f, 1, 0);
+    config_register_item("cross_enable", &cross_enable, CONFIG_TYPE_UINT16, &cross_enable_default, "Cross Enable");
+    menu_auto_link_child(cross_enable_unit, image_page);
 
     // ========== Save_config二级菜单 ==========
     menu_unit_t *save_slot1 = menu_create_function("Slot 1", menu_func_save_slot1);
