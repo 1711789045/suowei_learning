@@ -71,6 +71,9 @@ static void config_write_to_buffer(void)
 
     // 写入魔数
     flash_union_buffer[index++].uint32_type = CONFIG_MAGIC_NUMBER;
+    
+    // 写入版本号
+    flash_union_buffer[index++].uint32_type = CONFIG_VERSION;
 
     // 写入配置项数量
     flash_union_buffer[index++].uint32_type = config_item_count;
@@ -126,7 +129,7 @@ static void config_read_from_buffer(void)
     uint32 index = 0;
 
     printf("[CONFIG] Read-buffer: Step 1 - Reading magic number...\r\n");
-    // 跳过魔数
+    // 读取魔数
     uint32 magic = flash_union_buffer[index++].uint32_type;
     printf("[CONFIG] Read magic=0x%08X (expect=0x%08X)\r\n", magic, CONFIG_MAGIC_NUMBER);
 
@@ -138,7 +141,21 @@ static void config_read_from_buffer(void)
         return;
     }
 
-    printf("[CONFIG] Read-buffer: Step 2 - Reading item count...\r\n");
+    printf("[CONFIG] Read-buffer: Step 2 - Reading version number...\r\n");
+    // 读取版本号
+    uint32 saved_version = flash_union_buffer[index++].uint32_type;
+    printf("[CONFIG] Read version=%d (expect=%d)\r\n", saved_version, CONFIG_VERSION);
+    
+    if (saved_version != CONFIG_VERSION)
+    {
+        // 版本不匹配，配置结构已改变，清除所有Flash数据
+        printf("[CONFIG] Version mismatch! Config structure changed.\r\n");
+        printf("[CONFIG] Auto-erasing all Flash slots...\r\n");
+        config_erase_all_slots();
+        return;
+    }
+
+    printf("[CONFIG] Read-buffer: Step 3 - Reading item count...\r\n");
     // 读取配置项数量
     uint32 saved_count = flash_union_buffer[index++].uint32_type;
     printf("[CONFIG] Read count=%d (current=%d)\r\n", saved_count, config_item_count);
@@ -154,7 +171,7 @@ static void config_read_from_buffer(void)
                load_count, config_item_count - load_count);
     }
 
-    printf("[CONFIG] Read-buffer: Step 3 - Loading %d items...\r\n", load_count);
+    printf("[CONFIG] Read-buffer: Step 4 - Loading %d items...\r\n", load_count);
     // 读取Flash中保存的配置项的值
     printf("[CONFIG] Loading %d items from Flash...\r\n", load_count);
     for (uint8 i = 0; i < load_count; i++)
@@ -379,9 +396,9 @@ uint8 config_load_slot(uint8 slot)
     // 存档位有数据，先读取魔数和数量（2个word）
     flash_buffer_clear();
     
-    // 第一步：只读取魔数和配置项数量
-    printf("[CONFIG] Load slot %d: Step 1 - Reading header (2 words)...\r\n", slot);
-    flash_read_page_to_buffer(CONFIG_FLASH_SECTION, page, 2);
+    // 第一步：只读取魔数、版本号和配置项数量
+    printf("[CONFIG] Load slot %d: Step 1 - Reading header (3 words)...\r\n", slot);
+    flash_read_page_to_buffer(CONFIG_FLASH_SECTION, page, 3);
     
     // 检查魔数
     uint32 magic = flash_union_buffer[0].uint32_type;
@@ -394,13 +411,25 @@ uint8 config_load_slot(uint8 slot)
         return 1;
     }
     
+    // 检查版本号
+    uint32 saved_version = flash_union_buffer[1].uint32_type;
+    printf("[CONFIG] Load slot %d: Version=%d (expect=%d)\r\n", slot, saved_version, CONFIG_VERSION);
+    
+    if (saved_version != CONFIG_VERSION)
+    {
+        printf("[CONFIG] Load slot %d: Version mismatch! Config structure changed.\r\n", slot);
+        printf("[CONFIG] Auto-erasing all Flash slots...\r\n");
+        config_erase_all_slots();
+        return 1;
+    }
+    
     // 读取Flash中保存的配置项数量
-    uint32 saved_count = flash_union_buffer[1].uint32_type;
+    uint32 saved_count = flash_union_buffer[2].uint32_type;
     printf("[CONFIG] Load slot %d: Saved count=%d, Current count=%d\r\n", 
            slot, saved_count, config_item_count);
     
     // 第二步：根据Flash中保存的数量来计算需要读取的总长度
-    uint32 total_read_len = 2;  // 魔数 + 数量
+    uint32 total_read_len = 3;  // 魔数 + 版本号 + 数量
     
     // ⚠️ 使用较小的数量来避免读取越界
     uint32 items_to_read = (saved_count < config_item_count) ? saved_count : config_item_count;
@@ -508,7 +537,7 @@ uint8 config_auto_load(void)
     flash_buffer_clear();
 
     // 计算需要读取的数据长度
-    uint32 read_len = 2;  // 魔数 + 配置项数量
+    uint32 read_len = 3;  // 魔数 + 版本号 + 配置项数量
     for (uint8 i = 0; i < config_item_count; i++)
     {
         if (config_items[i].type == CONFIG_TYPE_DOUBLE)
