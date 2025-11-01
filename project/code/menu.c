@@ -1117,15 +1117,14 @@ void menu_example_create(void)
     // ⭐ basic_speed使用临时变量，退出编辑时才更新真实值
     basic_speed_menu_unit = menu_create_param("Basic Speed", &temp_basic_speed, CONFIG_TYPE_INT16, 10.0f, 3, 0);
 
-    // ========== 注册到配置系统（删除旧参数，使用新的6个独立参数）==========
-    // 注意：这会改变Flash配置结构，需要执行"Erase Flash"清除旧数据
+    // ========== 注册到配置系统（调整顺序以兼容旧Flash）==========
+    // 旧Flash顺序：direction(5) → speed(3) → basic_speed(1) → image(2) = 11项
+    // 新顺序：    direction(5) → speed_left(3) → basic_speed(1) → image(2) → speed_right(3) = 14项
+    // 这样前11项保持兼容，后3项作为新增项
     config_register_item("speed_left_kp", &speed_left_kp, CONFIG_TYPE_FLOAT, &speed_left_kp_default, "Left Kp");
     config_register_item("speed_left_ki", &speed_left_ki, CONFIG_TYPE_FLOAT, &speed_left_ki_default, "Left Ki");
     config_register_item("speed_left_kd", &speed_left_kd, CONFIG_TYPE_FLOAT, &speed_left_kd_default, "Left Kd");
-    config_register_item("speed_right_kp", &speed_right_kp, CONFIG_TYPE_FLOAT, &speed_right_kp_default, "Right Kp");
-    config_register_item("speed_right_ki", &speed_right_ki, CONFIG_TYPE_FLOAT, &speed_right_ki_default, "Right Ki");
-    config_register_item("speed_right_kd", &speed_right_kd, CONFIG_TYPE_FLOAT, &speed_right_kd_default, "Right Kd");
-    config_register_item("basic_speed", &basic_speed, CONFIG_TYPE_INT16, &basic_speed_default, "Basic Speed");
+    config_register_item("basic_speed", &basic_speed, CONFIG_TYPE_INT16, &basic_speed_default, "Basic Speed");  // 保持在第8项位置
 
     // 链接到父页面（顺序：左轮3项 → 右轮3项 → 基础速度）
     menu_auto_link_child(speed_left_kp_unit, speed_page);
@@ -1150,6 +1149,12 @@ void menu_example_create(void)
     cross_enable_unit = menu_create_param("Cross Enable", &cross_enable, CONFIG_TYPE_UINT16, 1.0f, 1, 0);
     config_register_item("cross_enable", &cross_enable, CONFIG_TYPE_UINT16, &cross_enable_default, "Cross Enable");
     menu_auto_link_child(cross_enable_unit, image_page);
+
+    // ========== 右轮参数注册（放在最后，作为新增配置项）==========
+    // 前11项保持与旧Flash兼容，后3项为新增
+    config_register_item("speed_right_kp", &speed_right_kp, CONFIG_TYPE_FLOAT, &speed_right_kp_default, "Right Kp");
+    config_register_item("speed_right_ki", &speed_right_ki, CONFIG_TYPE_FLOAT, &speed_right_ki_default, "Right Ki");
+    config_register_item("speed_right_kd", &speed_right_kd, CONFIG_TYPE_FLOAT, &speed_right_kd_default, "Right Kd");
 
     // ========== Save_config二级菜单 ==========
     menu_unit_t *save_slot1 = menu_create_function("Slot 1", menu_func_save_slot1);
