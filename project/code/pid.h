@@ -22,14 +22,10 @@ typedef struct
     float integral;             // 积分累积值
 } pid_t;
 
-// ==================== 速度环PID参数（左右轮独立）====================
-extern float speed_left_kp;     // 左轮速度环比例系数
-extern float speed_left_ki;     // 左轮速度环积分系数
-extern float speed_left_kd;     // 左轮速度环微分系数
-
-extern float speed_right_kp;    // 右轮速度环比例系数
-extern float speed_right_ki;    // 右轮速度环积分系数
-extern float speed_right_kd;    // 右轮速度环微分系数
+// ==================== 速度环PID参数 ====================
+extern float speed_kp;          // 速度环比例系数
+extern float speed_ki;          // 速度环积分系数
+extern float speed_kd;          // 速度环微分系数
 
 // ==================== 方向环PID参数 ====================
 extern float direction_kp;      // 方向环比例系数
@@ -37,10 +33,9 @@ extern float direction_ki;      // 方向环积分系数
 extern float direction_kd;      // 方向环微分系数
 
 // API函数声明
-void pid_init(void);                                                                    // 初始化PID参数
-void pid_reset(pid_t *pid);                                                             // 重置PID状态
-float pid_calc_incremental(pid_t *pid, float kp, float ki, float kd, 
-                           float target, float actual);                                 // 增量式PID（速度环用，支持自定义参数）
-float pid_calc_position(pid_t *pid, float target, float actual);                        // 位置式PID（方向环用）
+void pid_init(void);                                                       // 初始化PID参数
+void pid_reset(pid_t *pid);                                                // 重置PID状态
+float pid_calc_incremental(pid_t *pid, float target, float actual);        // 增量式PID（速度环用）
+float pid_calc_position(pid_t *pid, float target, float actual);           // 位置式PID（方向环用）
 
 #endif // _PID_H_

@@ -978,21 +978,6 @@ void menu_func_test(void)
 }
 
 /**
- * @brief  清除所有Flash存档位（恢复出厂）
- */
-void menu_func_erase_all_flash(void)
-{
-    // 清除所有Flash存档位
-    config_erase_all_slots();
-    
-    // 显示提示
-    menu_show_message("Flash Erased!");
-    
-    // 刷新菜单显示（显示默认值）
-    menu_refresh();
-}
-
-/**
  * @brief  VOFA+调试开关（功能函数-已废弃，改用参数方式）
  */
 void menu_func_speed_debug_toggle(void)
@@ -1079,59 +1064,38 @@ void menu_example_create(void)
     menu_auto_link_child(inner_ratio_unit, direction_page);
     menu_auto_link_child(outer_ratio_unit, direction_page);
 
-    // ========== 速度环三级参数 (左右轮独立PID+基础速度) ==========
+    // ========== 速度环三级参数 (增量式PID+基础速度) ==========
     // 定义默认值
-    static float speed_left_kp_default = 0.0f;
-    static float speed_left_ki_default = 0.0f;
-    static float speed_left_kd_default = 0.0f;
-    static float speed_right_kp_default = 0.0f;
-    static float speed_right_ki_default = 0.0f;
-    static float speed_right_kd_default = 0.0f;
+    static float speed_kp_default = 0.0f;
+    static float speed_ki_default = 0.0f;
+    static float speed_kd_default = 0.0f;
     static int16 basic_speed_default = 100;
     
     // 初始化临时变量（从motor.h的全局变量读取当前值）
     temp_basic_speed = basic_speed;
 
-    // 创建菜单单元（左轮）
-    static menu_unit_t* speed_left_kp_unit = NULL;
-    static menu_unit_t* speed_left_ki_unit = NULL;
-    static menu_unit_t* speed_left_kd_unit = NULL;
-    
-    // 创建菜单单元（右轮）
-    static menu_unit_t* speed_right_kp_unit = NULL;
-    static menu_unit_t* speed_right_ki_unit = NULL;
-    static menu_unit_t* speed_right_kd_unit = NULL;
+    // 创建菜单单元
+    static menu_unit_t* speed_kp_unit = NULL;
+    static menu_unit_t* speed_ki_unit = NULL;
+    static menu_unit_t* speed_kd_unit = NULL;
 
-    // 左轮PID参数
-    speed_left_kp_unit = menu_create_param("Left Kp", &speed_left_kp, CONFIG_TYPE_FLOAT, 0.1f, 2, 2);
-    speed_left_ki_unit = menu_create_param("Left Ki", &speed_left_ki, CONFIG_TYPE_FLOAT, 0.1f, 2, 2);
-    speed_left_kd_unit = menu_create_param("Left Kd", &speed_left_kd, CONFIG_TYPE_FLOAT, 0.1f, 2, 2);
-    
-    // 右轮PID参数
-    speed_right_kp_unit = menu_create_param("Right Kp", &speed_right_kp, CONFIG_TYPE_FLOAT, 0.1f, 2, 2);
-    speed_right_ki_unit = menu_create_param("Right Ki", &speed_right_ki, CONFIG_TYPE_FLOAT, 0.1f, 2, 2);
-    speed_right_kd_unit = menu_create_param("Right Kd", &speed_right_kd, CONFIG_TYPE_FLOAT, 0.1f, 2, 2);
+    speed_kp_unit = menu_create_param("Speed Kp", &speed_kp, CONFIG_TYPE_FLOAT, 0.1f, 2, 2);
+    speed_ki_unit = menu_create_param("Speed Ki", &speed_ki, CONFIG_TYPE_FLOAT, 0.1f, 2, 2);
+    speed_kd_unit = menu_create_param("Speed Kd", &speed_kd, CONFIG_TYPE_FLOAT, 0.1f, 2, 2);
     
     // ⭐ basic_speed使用临时变量，退出编辑时才更新真实值
     basic_speed_menu_unit = menu_create_param("Basic Speed", &temp_basic_speed, CONFIG_TYPE_INT16, 10.0f, 3, 0);
 
-    // ========== 注册到配置系统（替换旧参数为左右轮独立参数）==========
-    // 注意：配置项顺序必须与旧版本保持一致，新参数放在最后
-    // 旧Flash顺序：direction(5项) → speed_kp/ki/kd(3项) → basic_speed(1项) → image(2项)
-    // 新顺序：direction(5项) → speed_left_kp/ki/kd(3项，替换旧speed) → basic_speed(1项) → image(2项) → speed_right(3项，新增)
-    
-    config_register_item("speed_left_kp", &speed_left_kp, CONFIG_TYPE_FLOAT, &speed_left_kp_default, "Left Kp");
-    config_register_item("speed_left_ki", &speed_left_ki, CONFIG_TYPE_FLOAT, &speed_left_ki_default, "Left Ki");
-    config_register_item("speed_left_kd", &speed_left_kd, CONFIG_TYPE_FLOAT, &speed_left_kd_default, "Left Kd");
+    // 注册到配置系统（注意：注册的是真实变量basic_speed，不是temp）
+    config_register_item("speed_kp", &speed_kp, CONFIG_TYPE_FLOAT, &speed_kp_default, "Speed Kp");
+    config_register_item("speed_ki", &speed_ki, CONFIG_TYPE_FLOAT, &speed_ki_default, "Speed Ki");
+    config_register_item("speed_kd", &speed_kd, CONFIG_TYPE_FLOAT, &speed_kd_default, "Speed Kd");
     config_register_item("basic_speed", &basic_speed, CONFIG_TYPE_INT16, &basic_speed_default, "Basic Speed");
 
-    // 链接到父页面（顺序：左轮Kp/Ki/Kd → 右轮Kp/Ki/Kd → 基础速度）
-    menu_auto_link_child(speed_left_kp_unit, speed_page);
-    menu_auto_link_child(speed_left_ki_unit, speed_page);
-    menu_auto_link_child(speed_left_kd_unit, speed_page);
-    menu_auto_link_child(speed_right_kp_unit, speed_page);
-    menu_auto_link_child(speed_right_ki_unit, speed_page);
-    menu_auto_link_child(speed_right_kd_unit, speed_page);
+    // 链接到父页面
+    menu_auto_link_child(speed_kp_unit, speed_page);
+    menu_auto_link_child(speed_ki_unit, speed_page);
+    menu_auto_link_child(speed_kd_unit, speed_page);
     menu_auto_link_child(basic_speed_menu_unit, speed_page);
 
     // ========== Image三级参数 ==========
@@ -1149,12 +1113,6 @@ void menu_example_create(void)
     config_register_item("cross_enable", &cross_enable, CONFIG_TYPE_UINT16, &cross_enable_default, "Cross Enable");
     menu_auto_link_child(cross_enable_unit, image_page);
 
-    // ========== 右轮参数（新增，放在最后保持兼容性）==========
-    // 注册右轮PID参数到配置系统（新增配置项，放在最后）
-    config_register_item("speed_right_kp", &speed_right_kp, CONFIG_TYPE_FLOAT, &speed_right_kp_default, "Right Kp");
-    config_register_item("speed_right_ki", &speed_right_ki, CONFIG_TYPE_FLOAT, &speed_right_ki_default, "Right Ki");
-    config_register_item("speed_right_kd", &speed_right_kd, CONFIG_TYPE_FLOAT, &speed_right_kd_default, "Right Kd");
-
     // ========== Save_config二级菜单 ==========
     menu_unit_t *save_slot1 = menu_create_function("Slot 1", menu_func_save_slot1);
     menu_unit_t *save_slot2 = menu_create_function("Slot 2", menu_func_save_slot2);
@@ -1169,7 +1127,6 @@ void menu_example_create(void)
 
     // ========== Debug二级菜单 ==========
     menu_unit_t *debug_show_image = menu_create_function("Show Image", menu_func_show_image);
-    menu_unit_t *debug_erase_flash = menu_create_function("Erase Flash", menu_func_erase_all_flash);
     menu_unit_t *debug_test = menu_create_function("Test Function", menu_func_test);
     menu_unit_t *debug_speed_loop = menu_create_param("SpeedDebug", &speed_debug_enable, CONFIG_TYPE_UINT8, 1.0f, 1, 0);
     menu_unit_t *debug_direction_loop = menu_create_param("DirectionDebug", &direction_debug_enable, CONFIG_TYPE_UINT8, 1.0f, 1, 0);
@@ -1203,12 +1160,11 @@ void menu_example_create(void)
     menu_link(load_slot3, load_slot2, load_slot4, NULL, load_config);
     menu_link(load_slot4, load_slot3, load_slot1, NULL, load_config);        // 循环
 
-    // Debug二级菜单链接（5项循环）
-    menu_link(debug_show_image, debug_direction_loop, debug_erase_flash, NULL, debug);    // 第1项
-    menu_link(debug_erase_flash, debug_show_image, debug_test, NULL, debug);              // 第2项（新增）
-    menu_link(debug_test, debug_erase_flash, debug_speed_loop, NULL, debug);              // 第3项
-    menu_link(debug_speed_loop, debug_test, debug_direction_loop, NULL, debug);           // 第4项
-    menu_link(debug_direction_loop, debug_speed_loop, debug_show_image, NULL, debug);     // 第5项循环
+    // Debug二级菜单链接（循环）
+    menu_link(debug_show_image, debug_direction_loop, debug_test, NULL, debug);           // 循环
+    menu_link(debug_test, debug_show_image, debug_speed_loop, NULL, debug);
+    menu_link(debug_speed_loop, debug_test, debug_direction_loop, NULL, debug);
+    menu_link(debug_direction_loop, debug_speed_loop, debug_show_image, NULL, debug);     // 循环
 
 }
 

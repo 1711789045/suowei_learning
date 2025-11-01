@@ -11,11 +11,11 @@
 #include <string.h>
 
 // ==================== 速度环PID状态 ====================
-pid_t pid_speed_left;        // 左轮速度环PID
-pid_t pid_speed_right;       // 右轮速度环PID
+static pid_t pid_speed_left;        // 左轮速度环PID
+static pid_t pid_speed_right;       // 右轮速度环PID
 
 // ==================== 方向环PID状态 ====================
-pid_t pid_direction;         // 方向环PID
+static pid_t pid_direction;         // 方向环PID
 
 // 速度环目标值(编码器增量)
 static int16 target_left = 0;
@@ -36,10 +36,6 @@ float outer_wheel_ratio = 1.0f;     // 外轮加速系数(默认1.0)
 
 // 方向环控制周期计数器(5ms中断，每2次执行1次方向环=10ms)
 static uint8 direction_counter = 0;
-
-// 调试状态记录（用于检测状态跳变）
-static uint8 last_direction_debug_enable = 0;  // 方向环调试状态
-static uint8 last_speed_debug_enable = 0;      // 速度环调试状态
 
 // 内部函数声明
 static void motor_set_pwm_left(int16 pwm);
@@ -124,47 +120,6 @@ void motor_set_target_right(int16 target)
 ********************************************************************************************************************/
 void motor_process(void)
 {
-    // ==================== 方向环调试状态检测 ====================
-    // 检测direction_debug_enable从0变为1（新开启）
-    if (direction_debug_enable == 1 && last_direction_debug_enable == 0)
-    {
-        // 清除方向环PID状态
-        pid_reset(&pid_direction);
-        
-        // 清除速度环PID状态
-        pid_reset(&pid_speed_left);
-        pid_reset(&pid_speed_right);
-        
-        printf("[MOTOR] Direction debug enabled - PID states reset\r\n");
-    }
-    
-    // 检测direction_debug_enable从1变为0（关闭）
-    if (direction_debug_enable == 0 && last_direction_debug_enable == 1)
-    {
-        // 停止电机（PWM置0）
-        pwm_set_duty(MOTOR_LEFT_PWM, 0);
-        pwm_set_duty(MOTOR_RIGHT_PWM, 0);
-        
-        printf("[MOTOR] Direction debug disabled - Motors stopped\r\n");
-    }
-    
-    // 更新方向环状态记录
-    last_direction_debug_enable = direction_debug_enable;
-    
-    // ==================== 速度环调试状态检测 ====================
-    // 检测speed_debug_enable从1变为0（关闭）
-    if (speed_debug_enable == 0 && last_speed_debug_enable == 1)
-    {
-        // 停止电机（PWM置0）
-        pwm_set_duty(MOTOR_LEFT_PWM, 0);
-        pwm_set_duty(MOTOR_RIGHT_PWM, 0);
-        
-        printf("[MOTOR] Speed debug disabled - Motors stopped\r\n");
-    }
-    
-    // 更新速度环状态记录
-    last_speed_debug_enable = speed_debug_enable;
-    
     // ==================== 方向环控制 (10ms周期) ====================
     if (direction_debug_enable)
     {
@@ -210,13 +165,9 @@ void motor_process(void)
     actual_left = encoder_get_left();
     actual_right = encoder_get_right();
     
-    // 速度环PID计算(增量式PID，左右轮使用各自的参数)
-    float speed_out_left = pid_calc_incremental(&pid_speed_left, 
-                                                 speed_left_kp, speed_left_ki, speed_left_kd,
-                                                 (float)target_left, (float)actual_left);
-    float speed_out_right = pid_calc_incremental(&pid_speed_right, 
-                                                  speed_right_kp, speed_right_ki, speed_right_kd,
-                                                  (float)target_right, (float)actual_right);
+    // 速度环PID计算(增量式PID)
+    float speed_out_left = pid_calc_incremental(&pid_speed_left, (float)target_left, (float)actual_left);
+    float speed_out_right = pid_calc_incremental(&pid_speed_right, (float)target_right, (float)actual_right);
     
     // 设置电机PWM(自动处理正反转)
     motor_set_pwm_left((int16)speed_out_left);

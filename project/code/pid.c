@@ -7,14 +7,10 @@
 
 #include "pid.h"
 
-// ==================== 速度环PID参数（左右轮独立）====================
-float speed_left_kp = 0.0f;     // 左轮比例系数(初值=0)
-float speed_left_ki = 0.0f;     // 左轮积分系数(初值=0)
-float speed_left_kd = 0.0f;     // 左轮微分系数(初值=0)
-
-float speed_right_kp = 0.0f;    // 右轮比例系数(初值=0)
-float speed_right_ki = 0.0f;    // 右轮积分系数(初值=0)
-float speed_right_kd = 0.0f;    // 右轮微分系数(初值=0)
+// ==================== 速度环PID参数 ====================
+float speed_kp = 0.0f;          // 比例系数(初值=0)
+float speed_ki = 0.0f;          // 积分系数(初值=0)
+float speed_kd = 0.0f;          // 微分系数(初值=0)
 
 // ==================== 方向环PID参数 ====================
 float direction_kp = 0.0f;      // 比例系数(初值=0)
@@ -30,25 +26,18 @@ float direction_kd = 0.0f;      // 微分系数(初值=0)
 ********************************************************************************************************************/
 void pid_init(void)
 {
-    // 左轮速度环PID
-    speed_left_kp = 0.0f;
-    speed_left_ki = 0.0f;
-    speed_left_kd = 0.0f;
-    
-    // 右轮速度环PID
-    speed_right_kp = 0.0f;
-    speed_right_ki = 0.0f;
-    speed_right_kd = 0.0f;
+    // 速度环PID
+    speed_kp = 0.0f;
+    speed_ki = 0.0f;
+    speed_kd = 0.0f;
     
     // 方向环PID
     direction_kp = 0.0f;
     direction_ki = 0.0f;
     direction_kd = 0.0f;
 
-    printf("[PID] Init OK - Left(Kp=%.2f Ki=%.2f Kd=%.2f) Right(Kp=%.2f Ki=%.2f Kd=%.2f) Direction(Kp=%.2f Ki=%.2f Kd=%.2f)\r\n", 
-           speed_left_kp, speed_left_ki, speed_left_kd, 
-           speed_right_kp, speed_right_ki, speed_right_kd,
-           direction_kp, direction_ki, direction_kd);
+    printf("[PID] Init OK - Speed(Kp=%.2f Ki=%.2f Kd=%.2f) Direction(Kp=%.2f Ki=%.2f Kd=%.2f)\r\n", 
+           speed_kp, speed_ki, speed_kd, direction_kp, direction_ki, direction_kd);
 }
 
 /*********************************************************************************************************************
@@ -70,24 +59,21 @@ void pid_reset(pid_t *pid)
 * 函数名称: pid_calc_incremental
 * 功能说明: 计算PID输出(增量式) - 用于速度环
 * 参数说明: pid    - PID状态结构体指针
-*           kp     - 比例系数
-*           ki     - 积分系数
-*           kd     - 微分系数
 *           target - 目标值
 *           actual - 实际值
 * 返回值:   float - PID控制输出
 * 备注:     增量式PID公式: Δu(k) = Kp*[e(k)-e(k-1)] + Ki*e(k) + Kd*[e(k)-2*e(k-1)+e(k-2)]
 *           输出累加: u(k) = u(k-1) + Δu(k)
 ********************************************************************************************************************/
-float pid_calc_incremental(pid_t *pid, float kp, float ki, float kd, float target, float actual)
+float pid_calc_incremental(pid_t *pid, float target, float actual)
 {
     // 计算当前误差 e(k)
     float error = target - actual;
 
-    // 计算增量式PID各项（使用传入的参数）
-    float delta_p = kp * (error - pid->error_last);                          // 比例项增量
-    float delta_i = ki * error;                                               // 积分项（误差本身）
-    float delta_d = kd * (error - 2.0f * pid->error_last + pid->error_last2); // 微分项增量
+    // 计算增量式PID各项
+    float delta_p = speed_kp * (error - pid->error_last);                          // 比例项增量
+    float delta_i = speed_ki * error;                                               // 积分项（误差本身）
+    float delta_d = speed_kd * (error - 2.0f * pid->error_last + pid->error_last2); // 微分项增量
 
     // 计算总增量
     float delta_output = delta_p + delta_i + delta_d;
