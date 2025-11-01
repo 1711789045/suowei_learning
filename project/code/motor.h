@@ -38,6 +38,10 @@ extern uint8 direction_debug_enable;                                       // �
 extern float inner_wheel_ratio;                                            // 内轮减速系数
 extern float outer_wheel_ratio;                                            // 外轮加速系数
 
+extern pid_t pid_speed_left;        // 左轮速度环PID
+extern pid_t pid_speed_right;       // 右轮速度环PID
+
+extern pid_t pid_direction;         // 方向环PID
 // API函数声明
 void motor_init(void);                                                     // 初始化电机系统
 void motor_set_target_left(int16 target);                                  // 设置左电机目标值(编码器增量)

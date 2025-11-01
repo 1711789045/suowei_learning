@@ -20,6 +20,8 @@
 #include "menu.h"
 #include "key.h"
 #include "image.h"
+#include "pid.h"
+#include <stdio.h>
 
 // ==================== 全局变量 ====================
 uint8 car_running = 0;              // 小车运行状态（0=停止，1=运行）
@@ -84,31 +86,68 @@ void start_car(void)
         return;
     }
     
-    // 倒计时显示
+    // ==================== 发车倒计时（采集图像数据）====================
+    // 清屏，显示倒计时
     ips114_clear();
-    ips114_show_string(40, 40, "Starting in 3...");
-    system_delay_ms(1000);
     
-    ips114_clear();
-    ips114_show_string(40, 40, "Starting in 2...");
-    system_delay_ms(1000);
+    // 倒计时3秒，同时采集图像数据
+    for(uint8 i = 3; i > 0; i--)
+    {
+        char buf[16];
+        sprintf(buf, "START in %d", i);
+        ips114_show_string(40, 60, buf);
+        system_delay_ms(1000);  // 延迟1秒
+    }
     
+    // 显示"GO!"
     ips114_clear();
-    ips114_show_string(40, 40, "Starting in 1...");
-    system_delay_ms(1000);
+    ips114_show_string(60, 60, "GO!");
+    system_delay_ms(500);  // 停留0.5秒
     
-    // 清屏（关闭显示）
+    // ==================== 退出菜单并准备发车 ====================
+    menu_exit();
+    
+    // 清屏（关闭显示，减少屏幕刷新对性能的影响）
     ips114_clear();
+    
+    // ==================== 重置PID状态 ====================
+    // 清除所有历史误差和积分，避免启动冲击
+    pid_reset(&pid_speed_left);
+    pid_reset(&pid_speed_right);
+    pid_reset(&pid_direction);
+    
+    // ==================== 检查图像数据有效性 ====================
+    // 确保final_mid_line在合理范围内（防止初始值为0导致的巨大误差）
+    if(final_mid_line < 20 || final_mid_line > IMAGE_W - 20)
+    {
+        final_mid_line = IMAGE_W / 2;  // 强制设为中点（94）
+        printf("[CONTROL] Warning: final_mid_line invalid, reset to center\r\n");
+    }
+    
+    // ==================== 渐进式发车 ====================
+    // 先开启方向环（低速校正姿态）
+    direction_debug_enable = 1;
+    
+    // 保存原始basic_speed
+    int16 target_speed = basic_speed;
+    
+    // 第1阶段：30%速度，持续300ms（校正车身姿态）
+    basic_speed = target_speed * 0.3;
+    speed_debug_enable = 1;
+    system_delay_ms(300);
+    
+    // 第2阶段：60%速度，持续200ms
+    basic_speed = target_speed * 0.6;
+    system_delay_ms(200);
+    
+    // 第3阶段：恢复目标速度
+    basic_speed = target_speed;
     
     // 设置运行状态
     car_running = 1;
     
-    // 开启速度环和方向环
-    speed_debug_enable = 1;
-    direction_debug_enable = 1;
-    
-    // 退出菜单
-    menu_exit();
+    printf("[CONTROL] Car started! mid_line=%d, basic_speed=%d\r\n", 
+           final_mid_line, basic_speed);
 }
 
 /**
@@ -123,12 +162,7 @@ void stop_car(void)
     // 1. 立即关闭方向环
     direction_debug_enable = 0;
     
-    // 2. 速度环目标置0（启动刹车）
-    motor_set_target_left(0);
-    motor_set_target_right(0);
     
-    // 3. 延时1000ms，让速度环执行刹车
-    system_delay_ms(1000);
     
     // 4. 关闭速度环
     speed_debug_enable = 0;

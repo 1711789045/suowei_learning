@@ -1064,38 +1064,62 @@ void menu_example_create(void)
     menu_auto_link_child(inner_ratio_unit, direction_page);
     menu_auto_link_child(outer_ratio_unit, direction_page);
 
-    // ========== 速度环三级参数 (增量式PID+基础速度) ==========
+    // ========== 速度环三级参数 (左右轮独立PID+基础速度) ==========
     // 定义默认值
-    static float speed_kp_default = 0.0f;
-    static float speed_ki_default = 0.0f;
-    static float speed_kd_default = 0.0f;
+    static float speed_left_kp_default = 0.0f;
+    static float speed_left_ki_default = 0.0f;
+    static float speed_left_kd_default = 0.0f;
+    static float speed_right_kp_default = 0.0f;
+    static float speed_right_ki_default = 0.0f;
+    static float speed_right_kd_default = 0.0f;
     static int16 basic_speed_default = 100;
     
     // 初始化临时变量（从motor.h的全局变量读取当前值）
     temp_basic_speed = basic_speed;
 
-    // 创建菜单单元
-    static menu_unit_t* speed_kp_unit = NULL;
-    static menu_unit_t* speed_ki_unit = NULL;
-    static menu_unit_t* speed_kd_unit = NULL;
+    // 创建菜单单元（左轮）
+    static menu_unit_t* speed_left_kp_unit = NULL;
+    static menu_unit_t* speed_left_ki_unit = NULL;
+    static menu_unit_t* speed_left_kd_unit = NULL;
+    
+    // 创建菜单单元（右轮）
+    static menu_unit_t* speed_right_kp_unit = NULL;
+    static menu_unit_t* speed_right_ki_unit = NULL;
+    static menu_unit_t* speed_right_kd_unit = NULL;
 
-    speed_kp_unit = menu_create_param("Speed Kp", &speed_kp, CONFIG_TYPE_FLOAT, 0.1f, 2, 2);
-    speed_ki_unit = menu_create_param("Speed Ki", &speed_ki, CONFIG_TYPE_FLOAT, 0.1f, 2, 2);
-    speed_kd_unit = menu_create_param("Speed Kd", &speed_kd, CONFIG_TYPE_FLOAT, 0.1f, 2, 2);
+    // 左轮PID参数
+    speed_left_kp_unit = menu_create_param("Left Kp", &speed_left_kp, CONFIG_TYPE_FLOAT, 0.1f, 2, 2);
+    speed_left_ki_unit = menu_create_param("Left Ki", &speed_left_ki, CONFIG_TYPE_FLOAT, 0.1f, 2, 2);
+    speed_left_kd_unit = menu_create_param("Left Kd", &speed_left_kd, CONFIG_TYPE_FLOAT, 0.1f, 2, 2);
+    
+    // 右轮PID参数
+    speed_right_kp_unit = menu_create_param("Right Kp", &speed_right_kp, CONFIG_TYPE_FLOAT, 0.1f, 2, 2);
+    speed_right_ki_unit = menu_create_param("Right Ki", &speed_right_ki, CONFIG_TYPE_FLOAT, 0.1f, 2, 2);
+    speed_right_kd_unit = menu_create_param("Right Kd", &speed_right_kd, CONFIG_TYPE_FLOAT, 0.1f, 2, 2);
     
     // ⭐ basic_speed使用临时变量，退出编辑时才更新真实值
     basic_speed_menu_unit = menu_create_param("Basic Speed", &temp_basic_speed, CONFIG_TYPE_INT16, 10.0f, 3, 0);
 
-    // 注册到配置系统（注意：注册的是真实变量basic_speed，不是temp）
-    config_register_item("speed_kp", &speed_kp, CONFIG_TYPE_FLOAT, &speed_kp_default, "Speed Kp");
-    config_register_item("speed_ki", &speed_ki, CONFIG_TYPE_FLOAT, &speed_ki_default, "Speed Ki");
-    config_register_item("speed_kd", &speed_kd, CONFIG_TYPE_FLOAT, &speed_kd_default, "Speed Kd");
+    // 注册到配置系统（左轮）
+    config_register_item("speed_left_kp", &speed_left_kp, CONFIG_TYPE_FLOAT, &speed_left_kp_default, "Left Kp");
+    config_register_item("speed_left_ki", &speed_left_ki, CONFIG_TYPE_FLOAT, &speed_left_ki_default, "Left Ki");
+    config_register_item("speed_left_kd", &speed_left_kd, CONFIG_TYPE_FLOAT, &speed_left_kd_default, "Left Kd");
+    
+    // 注册到配置系统（右轮）
+    config_register_item("speed_right_kp", &speed_right_kp, CONFIG_TYPE_FLOAT, &speed_right_kp_default, "Right Kp");
+    config_register_item("speed_right_ki", &speed_right_ki, CONFIG_TYPE_FLOAT, &speed_right_ki_default, "Right Ki");
+    config_register_item("speed_right_kd", &speed_right_kd, CONFIG_TYPE_FLOAT, &speed_right_kd_default, "Right Kd");
+    
+    // 注册基础速度（注意：注册的是真实变量basic_speed，不是temp）
     config_register_item("basic_speed", &basic_speed, CONFIG_TYPE_INT16, &basic_speed_default, "Basic Speed");
 
-    // 链接到父页面
-    menu_auto_link_child(speed_kp_unit, speed_page);
-    menu_auto_link_child(speed_ki_unit, speed_page);
-    menu_auto_link_child(speed_kd_unit, speed_page);
+    // 链接到父页面（顺序：左轮Kp/Ki/Kd → 右轮Kp/Ki/Kd → 基础速度）
+    menu_auto_link_child(speed_left_kp_unit, speed_page);
+    menu_auto_link_child(speed_left_ki_unit, speed_page);
+    menu_auto_link_child(speed_left_kd_unit, speed_page);
+    menu_auto_link_child(speed_right_kp_unit, speed_page);
+    menu_auto_link_child(speed_right_ki_unit, speed_page);
+    menu_auto_link_child(speed_right_kd_unit, speed_page);
     menu_auto_link_child(basic_speed_menu_unit, speed_page);
 
     // ========== Image三级参数 ==========

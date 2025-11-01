@@ -187,8 +187,8 @@ uint8 single_edge_err[IMAGE_H] = {
 	78,79,79,80,80,81,82,82,83,84,
 	85,85,86,87,87,88,89,89,90,91
 };
-uint8 final_mid_line = 0;
-uint8 last_final_mid_line = 0;
+uint8 final_mid_line = 94;
+uint8 last_final_mid_line = 94;
 uint8 prospect = 100;                     // 前瞻值
 uint8 cross_flag = 0;                     // 十字标志位(与cross_status同步: 0=直道 1=十字)
 uint8 mid_mode = 0;

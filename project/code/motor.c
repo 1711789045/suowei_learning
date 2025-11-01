@@ -11,11 +11,11 @@
 #include <string.h>
 
 // ==================== 速度环PID状态 ====================
-static pid_t pid_speed_left;        // 左轮速度环PID
-static pid_t pid_speed_right;       // 右轮速度环PID
+pid_t pid_speed_left;        // 左轮速度环PID
+pid_t pid_speed_right;       // 右轮速度环PID
 
 // ==================== 方向环PID状态 ====================
-static pid_t pid_direction;         // 方向环PID
+pid_t pid_direction;         // 方向环PID
 
 // 速度环目标值(编码器增量)
 static int16 target_left = 0;
@@ -210,9 +210,13 @@ void motor_process(void)
     actual_left = encoder_get_left();
     actual_right = encoder_get_right();
     
-    // 速度环PID计算(增量式PID)
-    float speed_out_left = pid_calc_incremental(&pid_speed_left, (float)target_left, (float)actual_left);
-    float speed_out_right = pid_calc_incremental(&pid_speed_right, (float)target_right, (float)actual_right);
+    // 速度环PID计算(增量式PID，左右轮使用各自的参数)
+    float speed_out_left = pid_calc_incremental(&pid_speed_left, 
+                                                 speed_left_kp, speed_left_ki, speed_left_kd,
+                                                 (float)target_left, (float)actual_left);
+    float speed_out_right = pid_calc_incremental(&pid_speed_right, 
+                                                  speed_right_kp, speed_right_ki, speed_right_kd,
+                                                  (float)target_right, (float)actual_right);
     
     // 设置电机PWM(自动处理正反转)
     motor_set_pwm_left((int16)speed_out_left);
