@@ -533,9 +533,40 @@ uint8 config_auto_load(void)
         return 1;  // 返回失败，表示使用了默认值
     }
 
-    // Flash有数据，安全读取
+    // Flash有数据，先只读取头部检查版本
     flash_buffer_clear();
 
+    // 第一步：只读取魔数和版本号（2个word）
+    printf("[CONFIG] Auto-load: Step 1 - Reading header (2 words)...\r\n");
+    flash_read_page_to_buffer(CONFIG_FLASH_SECTION, CONFIG_FLASH_PAGE_AUTO, 2);
+    
+    // 检查魔数
+    uint32 magic = flash_union_buffer[0].uint32_type;
+    printf("[CONFIG] Auto-load: Magic=0x%08X (expect=0x%08X)\r\n", magic, CONFIG_MAGIC_NUMBER);
+    
+    if (magic != CONFIG_MAGIC_NUMBER)
+    {
+        printf("[CONFIG] Auto-load: Magic mismatch! Using defaults\r\n");
+        config_reset_default();
+        return 1;
+    }
+    
+    // 检查版本号
+    uint32 saved_version = flash_union_buffer[1].uint32_type;
+    printf("[CONFIG] Auto-load: Version=%d (expect=%d)\r\n", saved_version, CONFIG_VERSION);
+    
+    if (saved_version != CONFIG_VERSION)
+    {
+        // 版本不匹配（旧Flash没有版本字段，这里会读到配置项数量14）
+        printf("[CONFIG] Auto-load: Version mismatch! Old Flash structure detected.\r\n");
+        printf("[CONFIG] Auto-erasing all Flash slots...\r\n");
+        config_erase_all_slots();
+        return 1;
+    }
+    
+    // 版本匹配，继续读取完整数据
+    flash_buffer_clear();
+    
     // 计算需要读取的数据长度
     uint32 read_len = 3;  // 魔数 + 版本号 + 配置项数量
     for (uint8 i = 0; i < config_item_count; i++)
@@ -546,10 +577,10 @@ uint8 config_auto_load(void)
             read_len += 1;
     }
 
-    printf("[CONFIG] Auto-load: Reading %d words from page %d...\r\n",
+    printf("[CONFIG] Auto-load: Step 2 - Reading all %d words from page %d...\r\n",
            read_len, CONFIG_FLASH_PAGE_AUTO);
 
-    // 从Flash读取
+    // 从Flash读取完整数据
     flash_read_page_to_buffer(CONFIG_FLASH_SECTION, CONFIG_FLASH_PAGE_AUTO, read_len);
 
     // 从缓冲区读取配置
