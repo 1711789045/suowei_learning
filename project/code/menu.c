@@ -1100,12 +1100,12 @@ void menu_example_create(void)
     // ⭐ basic_speed使用临时变量，退出编辑时才更新真实值
     basic_speed_menu_unit = menu_create_param("Basic Speed", &temp_basic_speed, CONFIG_TYPE_INT16, 10.0f, 3, 0);
 
-    // 注册到配置系统（左轮）
-    config_register_item("speed_left_kp", &speed_left_kp, CONFIG_TYPE_FLOAT, &speed_left_kp_default, "Left Kp");
-    config_register_item("speed_left_ki", &speed_left_ki, CONFIG_TYPE_FLOAT, &speed_left_ki_default, "Left Ki");
-    config_register_item("speed_left_kd", &speed_left_kd, CONFIG_TYPE_FLOAT, &speed_left_kd_default, "Left Kd");
+    // 注册到配置系统（兼容旧Flash：保留旧名称映射到左轮）
+    config_register_item("speed_kp", &speed_left_kp, CONFIG_TYPE_FLOAT, &speed_left_kp_default, "Left Kp");  // 兼容旧配置
+    config_register_item("speed_ki", &speed_left_ki, CONFIG_TYPE_FLOAT, &speed_left_ki_default, "Left Ki");  // 兼容旧配置
+    config_register_item("speed_kd", &speed_left_kd, CONFIG_TYPE_FLOAT, &speed_left_kd_default, "Left Kd");  // 兼容旧配置
     
-    // 注册到配置系统（右轮）
+    // 右轮参数（新增）
     config_register_item("speed_right_kp", &speed_right_kp, CONFIG_TYPE_FLOAT, &speed_right_kp_default, "Right Kp");
     config_register_item("speed_right_ki", &speed_right_ki, CONFIG_TYPE_FLOAT, &speed_right_ki_default, "Right Ki");
     config_register_item("speed_right_kd", &speed_right_kd, CONFIG_TYPE_FLOAT, &speed_right_kd_default, "Right Kd");
