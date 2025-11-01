@@ -143,19 +143,21 @@ static void config_read_from_buffer(void)
     uint32 saved_count = flash_union_buffer[index++].uint32_type;
     printf("[CONFIG] Read count=%d (current=%d)\r\n", saved_count, config_item_count);
 
+    // 确定实际要加载的配置项数量（使用较小值）
+    uint32 load_count = (saved_count < config_item_count) ? saved_count : config_item_count;
+    
     if (saved_count != config_item_count)
     {
-        // 配置项数量不匹配，可能版本不同，使用默认值
-        printf("[CONFIG] Item count mismatch (saved=%d, current=%d), using defaults\r\n",
+        printf("[CONFIG] Item count mismatch (saved=%d, current=%d)\r\n",
                saved_count, config_item_count);
-        config_reset_default();
-        return;
+        printf("[CONFIG] Will load %d items, remaining %d items will use defaults\r\n",
+               load_count, config_item_count - load_count);
     }
 
-    printf("[CONFIG] Read-buffer: Step 3 - Loading %d items...\r\n", config_item_count);
-    // 读取所有配置项的值
-    printf("[CONFIG] Loading %d items from Flash...\r\n", config_item_count);
-    for (uint8 i = 0; i < config_item_count; i++)
+    printf("[CONFIG] Read-buffer: Step 3 - Loading %d items...\r\n", load_count);
+    // 读取Flash中保存的配置项的值
+    printf("[CONFIG] Loading %d items from Flash...\r\n", load_count);
+    for (uint8 i = 0; i < load_count; i++)
     {
         config_item_t *item = &config_items[i];
 
@@ -197,8 +199,51 @@ static void config_read_from_buffer(void)
         }
         printf("[CONFIG] Item #%d loaded OK\r\n", i);
     }
-    printf("[CONFIG] Read-buffer: All %d items loaded successfully\r\n", config_item_count);
-    printf("[CONFIG] Successfully loaded %d items\r\n", config_item_count);
+    
+    // 如果当前注册的配置项数量大于Flash中保存的数量，剩余项使用默认值
+    if (load_count < config_item_count)
+    {
+        printf("[CONFIG] Setting default values for remaining %d items (%d-%d)...\r\n",
+               config_item_count - load_count, load_count, config_item_count - 1);
+        
+        for (uint8 i = load_count; i < config_item_count; i++)
+        {
+            config_item_t *item = &config_items[i];
+            printf("[CONFIG] Setting default for item #%d (%s)...\r\n", i, item->key);
+            
+            switch (item->type)
+            {
+                case CONFIG_TYPE_FLOAT:
+                    *(float *)item->var_ptr = item->default_val.f;
+                    break;
+                case CONFIG_TYPE_DOUBLE:
+                    *(double *)item->var_ptr = item->default_val.d;
+                    break;
+                case CONFIG_TYPE_INT:
+                    *(int *)item->var_ptr = item->default_val.i;
+                    break;
+                case CONFIG_TYPE_INT16:
+                    *(int16 *)item->var_ptr = item->default_val.i16;
+                    break;
+                case CONFIG_TYPE_INT8:
+                    *(int8 *)item->var_ptr = item->default_val.i8;
+                    break;
+                case CONFIG_TYPE_UINT32:
+                    *(uint32 *)item->var_ptr = item->default_val.u32;
+                    break;
+                case CONFIG_TYPE_UINT16:
+                    *(uint16 *)item->var_ptr = item->default_val.u16;
+                    break;
+                case CONFIG_TYPE_UINT8:
+                    *(uint8 *)item->var_ptr = item->default_val.u8;
+                    break;
+            }
+        }
+    }
+    
+    printf("[CONFIG] Read-buffer: Loaded %d items from Flash, %d items use defaults\r\n", 
+           load_count, config_item_count - load_count);
+    printf("[CONFIG] Successfully loaded total %d items\r\n", config_item_count);
 }
 
 // ==================== API函数实现 ====================
@@ -331,26 +376,53 @@ uint8 config_load_slot(uint8 slot)
         return 1;
     }
 
-    // 存档位有数据，安全读取
+    // 存档位有数据，先读取魔数和数量（2个word）
     flash_buffer_clear();
-
-    // 计算需要读取的数据长度
-    uint32 read_len = 2;  // 魔数 + 配置项数量
-    for (uint8 i = 0; i < config_item_count; i++)
+    
+    // 第一步：只读取魔数和配置项数量
+    printf("[CONFIG] Load slot %d: Step 1 - Reading header (2 words)...\r\n", slot);
+    flash_read_page_to_buffer(CONFIG_FLASH_SECTION, page, 2);
+    
+    // 检查魔数
+    uint32 magic = flash_union_buffer[0].uint32_type;
+    printf("[CONFIG] Load slot %d: Magic=0x%08X (expect=0x%08X)\r\n", slot, magic, CONFIG_MAGIC_NUMBER);
+    
+    if (magic != CONFIG_MAGIC_NUMBER)
+    {
+        printf("[CONFIG] Load slot %d: Magic mismatch! Using defaults\r\n", slot);
+        config_reset_default();
+        return 1;
+    }
+    
+    // 读取Flash中保存的配置项数量
+    uint32 saved_count = flash_union_buffer[1].uint32_type;
+    printf("[CONFIG] Load slot %d: Saved count=%d, Current count=%d\r\n", 
+           slot, saved_count, config_item_count);
+    
+    // 第二步：根据Flash中保存的数量来计算需要读取的总长度
+    uint32 total_read_len = 2;  // 魔数 + 数量
+    
+    // ⚠️ 使用较小的数量来避免读取越界
+    uint32 items_to_read = (saved_count < config_item_count) ? saved_count : config_item_count;
+    
+    // 计算需要读取的数据总长度（基于Flash中实际保存的配置项）
+    // 注意：这里简化处理，假设前N个配置项类型相同
+    for (uint8 i = 0; i < items_to_read; i++)
     {
         if (config_items[i].type == CONFIG_TYPE_DOUBLE)
-            read_len += 2;
+            total_read_len += 2;
         else
-            read_len += 1;
+            total_read_len += 1;
     }
+    
+    printf("[CONFIG] Load slot %d: Step 2 - Reading total %d words from page %d...\r\n",
+           slot, total_read_len, page);
+    
+    // 重新读取完整数据
+    flash_buffer_clear();
+    flash_read_page_to_buffer(CONFIG_FLASH_SECTION, page, total_read_len);
 
-    printf("[CONFIG] Load slot %d: Reading %d words from page %d...\r\n",
-           slot, read_len, page);
-
-    // 从Flash读取
-    flash_read_page_to_buffer(CONFIG_FLASH_SECTION, page, read_len);
-
-    // 从缓冲区读取配置
+    // 从缓冲区读取配置（如果数量不匹配会在内部处理）
     config_read_from_buffer();
 
     printf("[CONFIG] Successfully loaded from slot %d (page %d, %d items)\r\n",

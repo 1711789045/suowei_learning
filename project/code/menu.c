@@ -1100,17 +1100,14 @@ void menu_example_create(void)
     // ⭐ basic_speed使用临时变量，退出编辑时才更新真实值
     basic_speed_menu_unit = menu_create_param("Basic Speed", &temp_basic_speed, CONFIG_TYPE_INT16, 10.0f, 3, 0);
 
-    // 注册到配置系统（兼容旧Flash：保留旧名称映射到左轮）
-    config_register_item("speed_kp", &speed_left_kp, CONFIG_TYPE_FLOAT, &speed_left_kp_default, "Left Kp");  // 兼容旧配置
-    config_register_item("speed_ki", &speed_left_ki, CONFIG_TYPE_FLOAT, &speed_left_ki_default, "Left Ki");  // 兼容旧配置
-    config_register_item("speed_kd", &speed_left_kd, CONFIG_TYPE_FLOAT, &speed_left_kd_default, "Left Kd");  // 兼容旧配置
+    // ========== 注册到配置系统（替换旧参数为左右轮独立参数）==========
+    // 注意：配置项顺序必须与旧版本保持一致，新参数放在最后
+    // 旧Flash顺序：direction(5项) → speed_kp/ki/kd(3项) → basic_speed(1项) → image(2项)
+    // 新顺序：direction(5项) → speed_left_kp/ki/kd(3项，替换旧speed) → basic_speed(1项) → image(2项) → speed_right(3项，新增)
     
-    // 右轮参数（新增）
-    config_register_item("speed_right_kp", &speed_right_kp, CONFIG_TYPE_FLOAT, &speed_right_kp_default, "Right Kp");
-    config_register_item("speed_right_ki", &speed_right_ki, CONFIG_TYPE_FLOAT, &speed_right_ki_default, "Right Ki");
-    config_register_item("speed_right_kd", &speed_right_kd, CONFIG_TYPE_FLOAT, &speed_right_kd_default, "Right Kd");
-    
-    // 注册基础速度（注意：注册的是真实变量basic_speed，不是temp）
+    config_register_item("speed_left_kp", &speed_left_kp, CONFIG_TYPE_FLOAT, &speed_left_kp_default, "Left Kp");
+    config_register_item("speed_left_ki", &speed_left_ki, CONFIG_TYPE_FLOAT, &speed_left_ki_default, "Left Ki");
+    config_register_item("speed_left_kd", &speed_left_kd, CONFIG_TYPE_FLOAT, &speed_left_kd_default, "Left Kd");
     config_register_item("basic_speed", &basic_speed, CONFIG_TYPE_INT16, &basic_speed_default, "Basic Speed");
 
     // 链接到父页面（顺序：左轮Kp/Ki/Kd → 右轮Kp/Ki/Kd → 基础速度）
@@ -1136,6 +1133,12 @@ void menu_example_create(void)
     cross_enable_unit = menu_create_param("Cross Enable", &cross_enable, CONFIG_TYPE_UINT16, 1.0f, 1, 0);
     config_register_item("cross_enable", &cross_enable, CONFIG_TYPE_UINT16, &cross_enable_default, "Cross Enable");
     menu_auto_link_child(cross_enable_unit, image_page);
+
+    // ========== 右轮参数（新增，放在最后保持兼容性）==========
+    // 注册右轮PID参数到配置系统（新增配置项，放在最后）
+    config_register_item("speed_right_kp", &speed_right_kp, CONFIG_TYPE_FLOAT, &speed_right_kp_default, "Right Kp");
+    config_register_item("speed_right_ki", &speed_right_ki, CONFIG_TYPE_FLOAT, &speed_right_ki_default, "Right Ki");
+    config_register_item("speed_right_kd", &speed_right_kd, CONFIG_TYPE_FLOAT, &speed_right_kd_default, "Right Kd");
 
     // ========== Save_config二级菜单 ==========
     menu_unit_t *save_slot1 = menu_create_function("Slot 1", menu_func_save_slot1);
