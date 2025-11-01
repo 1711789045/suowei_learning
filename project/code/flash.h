@@ -46,7 +46,7 @@
 #define CONFIG_FLASH_PAGE_BASE  0               // Flash页起始索引（Slot 0-3使用Page 0-3）
 #define CONFIG_FLASH_PAGE_AUTO  4               // 自动保存页面（掉电不丢失，Page 4）
 #define CONFIG_MAGIC_NUMBER     0x4D454E55      // 魔数 'MENU'，用于检测Flash是否已初始化
-#define CONFIG_VERSION          2               // 配置版本号（版本2：左右轮PID独立，顺序调整）
+#define CONFIG_VERSION          3               // 配置版本号（版本3：修复Flash写入长度bug）
 
 // ==================== 数据类型 ====================
 
