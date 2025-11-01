@@ -164,4 +164,12 @@ uint8 config_get_item_count(void);
  */
 config_item_t* config_get_item(uint8 index);
 
+/**
+ * @brief  清除所有Flash存档位数据
+ * @param  无
+ * @return 无
+ * @note   擦除所有4个存档位的Flash页面，恢复出厂状态
+ */
+void config_erase_all_slots(void);
+
 #endif

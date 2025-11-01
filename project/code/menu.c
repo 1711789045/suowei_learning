@@ -978,6 +978,21 @@ void menu_func_test(void)
 }
 
 /**
+ * @brief  清除所有Flash存档位（恢复出厂）
+ */
+void menu_func_erase_all_flash(void)
+{
+    // 清除所有Flash存档位
+    config_erase_all_slots();
+    
+    // 显示提示
+    menu_show_message("Flash Erased!");
+    
+    // 刷新菜单显示（显示默认值）
+    menu_refresh();
+}
+
+/**
  * @brief  VOFA+调试开关（功能函数-已废弃，改用参数方式）
  */
 void menu_func_speed_debug_toggle(void)
@@ -1154,6 +1169,7 @@ void menu_example_create(void)
 
     // ========== Debug二级菜单 ==========
     menu_unit_t *debug_show_image = menu_create_function("Show Image", menu_func_show_image);
+    menu_unit_t *debug_erase_flash = menu_create_function("Erase Flash", menu_func_erase_all_flash);
     menu_unit_t *debug_test = menu_create_function("Test Function", menu_func_test);
     menu_unit_t *debug_speed_loop = menu_create_param("SpeedDebug", &speed_debug_enable, CONFIG_TYPE_UINT8, 1.0f, 1, 0);
     menu_unit_t *debug_direction_loop = menu_create_param("DirectionDebug", &direction_debug_enable, CONFIG_TYPE_UINT8, 1.0f, 1, 0);
@@ -1187,11 +1203,12 @@ void menu_example_create(void)
     menu_link(load_slot3, load_slot2, load_slot4, NULL, load_config);
     menu_link(load_slot4, load_slot3, load_slot1, NULL, load_config);        // 循环
 
-    // Debug二级菜单链接（循环）
-    menu_link(debug_show_image, debug_direction_loop, debug_test, NULL, debug);           // 循环
-    menu_link(debug_test, debug_show_image, debug_speed_loop, NULL, debug);
-    menu_link(debug_speed_loop, debug_test, debug_direction_loop, NULL, debug);
-    menu_link(debug_direction_loop, debug_speed_loop, debug_show_image, NULL, debug);     // 循环
+    // Debug二级菜单链接（5项循环）
+    menu_link(debug_show_image, debug_direction_loop, debug_erase_flash, NULL, debug);    // 第1项
+    menu_link(debug_erase_flash, debug_show_image, debug_test, NULL, debug);              // 第2项（新增）
+    menu_link(debug_test, debug_erase_flash, debug_speed_loop, NULL, debug);              // 第3项
+    menu_link(debug_speed_loop, debug_test, debug_direction_loop, NULL, debug);           // 第4项
+    menu_link(debug_direction_loop, debug_speed_loop, debug_show_image, NULL, debug);     // 第5项循环
 
 }
 

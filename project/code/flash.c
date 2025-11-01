@@ -592,6 +592,26 @@ config_item_t* config_get_item(uint8 index)
 }
 
 /**
+ * @brief  清除所有Flash存档位数据
+ */
+void config_erase_all_slots(void)
+{
+    printf("[CONFIG] Erasing all Flash slots...\r\n");
+    
+    for (uint8 slot = 0; slot < CONFIG_SAVE_SLOT_COUNT; slot++)
+    {
+        uint32 page = config_get_flash_page(slot);
+        flash_erase_page(CONFIG_FLASH_SECTION, page);
+        printf("[CONFIG] Erased slot %d (page %d)\r\n", slot, page);
+    }
+    
+    printf("[CONFIG] All Flash slots erased, using default values\r\n");
+    
+    // 重置所有变量为默认值
+    config_reset_default();
+}
+
+/**
  * @brief  初始化配置系统
  */
 void config_init(void)
