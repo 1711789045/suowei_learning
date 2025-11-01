@@ -1206,6 +1206,17 @@ void menu_example_create(void)
     menu_link(debug_speed_loop, debug_test, debug_direction_loop, NULL, debug);           // 第4项
     menu_link(debug_direction_loop, debug_speed_loop, debug_show_image, NULL, debug);     // 第5项循环
 
+    // ==================== 调试：打印速度环参数地址和初始值 ====================
+    printf("[MENU] Speed PID parameters after menu creation:\r\n");
+    printf("[MENU]   Left  - Kp=%.2f (addr=0x%08X), Ki=%.2f (addr=0x%08X), Kd=%.2f (addr=0x%08X)\r\n",
+           speed_left_kp, (uint32)&speed_left_kp,
+           speed_left_ki, (uint32)&speed_left_ki,
+           speed_left_kd, (uint32)&speed_left_kd);
+    printf("[MENU]   Right - Kp=%.2f (addr=0x%08X), Ki=%.2f (addr=0x%08X), Kd=%.2f (addr=0x%08X)\r\n",
+           speed_right_kp, (uint32)&speed_right_kp,
+           speed_right_ki, (uint32)&speed_right_ki,
+           speed_right_kd, (uint32)&speed_right_kd);
+
 }
 
 /**

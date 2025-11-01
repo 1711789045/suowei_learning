@@ -109,6 +109,13 @@ void system_init(void)
     printf("[7/8] Loading config from Flash...");
     config_auto_load();
     printf("OK\r\n");
+    
+    // 调试：打印速度环参数值
+    printf("[DEBUG] After config_auto_load:\r\n");
+    printf("[DEBUG]   Left  - Kp=%.2f, Ki=%.2f, Kd=%.2f\r\n",
+           speed_left_kp, speed_left_ki, speed_left_kd);
+    printf("[DEBUG]   Right - Kp=%.2f, Ki=%.2f, Kd=%.2f\r\n",
+           speed_right_kp, speed_right_ki, speed_right_kd);
 
     // 8. 进入菜单
     printf("[8/8] Entering menu...");
@@ -161,7 +168,7 @@ int main(void)
             else
                 system_delay_ms(10);        // 10ms延时，100Hz刷新率
         }
-        else if(car_running)            // 小车运行模式（发车后）
+        else           // 小车运行模式（发车后）
         {
             // 图像处理（不显示，仅计算）
             if(mt9v03x_finish_flag)
@@ -172,10 +179,6 @@ int main(void)
             
             // 停车检测
             stop_detection();
-        }
-        else                            // 待机模式
-        {
-            system_delay_ms(10);
         }
     }
 }
