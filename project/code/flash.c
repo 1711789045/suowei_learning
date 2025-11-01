@@ -349,7 +349,7 @@ uint8 config_save_slot(uint8 slot)
     config_write_to_buffer();
 
     // 计算需要写入的数据长度
-    uint32 write_len = 2;  // 魔数 + 配置项数量
+    uint32 write_len = 3;  // 魔数 + 版本号 + 配置项数量
     for (uint8 i = 0; i < config_item_count; i++)
     {
         if (config_items[i].type == CONFIG_TYPE_DOUBLE)
@@ -364,7 +364,7 @@ uint8 config_save_slot(uint8 slot)
     // 写入Flash
     flash_write_page_from_buffer(CONFIG_FLASH_SECTION, page, write_len);
 
-    printf("[CONFIG] Saved to slot %d (page %d)\r\n", slot, page);
+    printf("[CONFIG] Saved to slot %d (page %d, %d words)\r\n", slot, page, write_len);
     return 0;
 }
 
@@ -489,7 +489,7 @@ uint8 config_auto_save(void)
     config_write_to_buffer();
 
     // 计算需要写入的数据长度
-    uint32 write_len = 2;  // 魔数 + 配置项数量
+    uint32 write_len = 3;  // 魔数 + 版本号 + 配置项数量
     for (uint8 i = 0; i < config_item_count; i++)
     {
         if (config_items[i].type == CONFIG_TYPE_DOUBLE)
