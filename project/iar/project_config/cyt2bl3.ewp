@@ -2219,6 +2219,12 @@
             <name>$PROJ_DIR$\..\..\code\encoder.h</name>
         </file>
         <file>
+            <name>$PROJ_DIR$\..\..\code\filter.c</name>
+        </file>
+        <file>
+            <name>$PROJ_DIR$\..\..\code\filter.h</name>
+        </file>
+        <file>
             <name>$PROJ_DIR$\..\..\code\pid.c</name>
         </file>
         <file>
