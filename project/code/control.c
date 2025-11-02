@@ -24,10 +24,11 @@
 // ==================== 全局变量 ====================
 uint8 car_running = 0;              // 小车运行状态（0=停止，1=运行）
 uint8 stop_flag = 0;                // 停车标志位
+volatile uint32 system_time_ms = 0; // 系统运行时间(ms)，在PIT中断中递增
 
 // ==================== 发车状态机变量 ====================
 static start_state_t start_state = START_IDLE;   // 当前状态
-static uint16 start_counter = 0;                 // 状态计数器（每次motor_process递增）
+static uint32 start_timestamp = 0;               // 状态开始时间戳(ms)
 static int16 target_speed_saved = 0;             // 保存的目标速度
 
 // ==================== 函数实现 ====================
@@ -114,7 +115,7 @@ void start_car(void)
     
     // 6. 启动状态机（从原地调整状态开始）
     start_state = START_ALIGN;
-    start_counter = 0;  // 重置计数器
+    start_timestamp = system_time_ms;  // 记录开始时间
 
 }
 
@@ -126,42 +127,44 @@ void start_car(void)
  */
 void start_car_process(void)
 {
+    uint32 elapsed_time;
+    
     // 只在非空闲状态下执行
     if (start_state == START_IDLE)
     {
         return;
     }
     
-    // 递增计数器（主循环每次调用）
-    start_counter++;
+    // 计算已经过的时间（基于精确的定时器计数）
+    elapsed_time = system_time_ms - start_timestamp;
     
-    // 状态机（基于计数器，假设主循环约5ms一次，200次=1秒，100次=0.5秒）
+    // 状态机（基于精确的毫秒计时）
     switch (start_state)
     {
         case START_ALIGN:  // 原地调整状态（basic_speed=0）
             basic_speed = 0;
-            if (start_counter >= 200)  // 约1秒（200 * 5ms = 1000ms）
+            if (elapsed_time >= 1000)  // 精确1秒
             {
                 start_state = START_ACCEL_30;
-                start_counter = 0;  // 重置计数器
+                start_timestamp = system_time_ms;  // 重置时间戳
             }
             break;
             
         case START_ACCEL_30:  // 30%加速状态
             basic_speed = (int16)(target_speed_saved * 0.3f);
-            if (start_counter >= 100)  // 约0.5秒（100 * 5ms = 500ms）
+            if (elapsed_time >= 500)  // 精确500ms
             {
                 start_state = START_ACCEL_60;
-                start_counter = 0;
+                start_timestamp = system_time_ms;
             }
             break;
             
         case START_ACCEL_60:  // 60%加速状态
             basic_speed = (int16)(target_speed_saved * 0.6f);
-            if (start_counter >= 100)  // 约0.5秒
+            if (elapsed_time >= 500)  // 精确500ms
             {
                 start_state = START_RUNNING;
-                start_counter = 0;
+                start_timestamp = system_time_ms;
             }
             break;
             

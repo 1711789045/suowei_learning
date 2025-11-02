@@ -22,6 +22,7 @@
 // ==================== 运行状态标志 ====================
 extern uint8 car_running;           // 小车运行状态（0=停止，1=运行）
 extern uint8 stop_flag;             // 停车标志位
+extern volatile uint32 system_time_ms;  // 系统运行时间(ms)，在PIT中断中递增
 
 // ==================== 发车状态机 ====================
 typedef enum
