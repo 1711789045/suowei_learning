@@ -119,10 +119,20 @@ void start_car(void)
     // 5. 退出菜单
     menu_exit();
     
-    // 6. 延时1秒（原地调整方向，对准中线）?? 重要：不要删除这个延时！
+    // 6. 延时1秒（原地调整方向，对准中线）
     system_delay_ms(1000);
     
-    // 7. 恢复basic_speed为预设值（开始前进）
+    // ========== 渐进式加速：分3阶段平滑启动，避免高速发车失控 ==========
+    
+    // 第1阶段：30%速度（校正姿态，确保对准中线）
+    basic_speed = (int16)(target_speed * 0.3f);
+    system_delay_ms(500);  // 持续500ms
+    
+    // 第2阶段：60%速度（平滑加速）
+    basic_speed = (int16)(target_speed * 0.6f);
+    system_delay_ms(500);  // 持续500ms
+    
+    // 第3阶段：100%速度（正常巡线）
     basic_speed = target_speed;
 
 }
