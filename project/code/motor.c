@@ -190,10 +190,21 @@ void motor_process(void)
                 target_right = basic_speed - (int16)(direction_output * outer_wheel_ratio);  // 右轮是外轮
             }
             
-            // ⚠️ 注意：不要限制target为非负值！
-            // basic_speed=0时，差速控制依赖负值来实现反向/减速
-            // 例如：target_left=+10, target_right=-10 → 原地右转
-            //      如果限制为0，就变成 +10, 0 → 无法有效转向
+            // 智能负值限制：只在前进时限制，原地调整时允许负值
+            // basic_speed > 0: 前进模式，限制负值避免后退
+            // basic_speed = 0: 原地调整模式，允许负值实现差速转向
+            if (basic_speed > 0)  // 仅在前进时限制
+            {
+                if (target_left < 0)
+                {
+                    target_left = 0;  // 前进时不允许左轮后退
+                }
+                if (target_right < 0)
+                {
+                    target_right = 0;  // 前进时不允许右轮后退
+                }
+            }
+            // basic_speed = 0时不限制，允许负值实现原地转向
         }
     }
     // ==================== 速度环调试模式 ====================
