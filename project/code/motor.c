@@ -190,21 +190,15 @@ void motor_process(void)
                 target_right = basic_speed - (int16)(direction_output * outer_wheel_ratio);  // 右轮是外轮
             }
             
-            // 智能负值限制：只在前进时限制，原地调整时允许负值
-            // basic_speed > 0: 前进模式，限制负值避免后退
-            // basic_speed = 0: 原地调整模式，允许负值实现差速转向
-            if (basic_speed > 0)  // 仅在前进时限制
+            // 负值限制：全程限制为0
+            if (target_left < 0)
             {
-                if (target_left < 0)
-                {
-                    target_left = 0;  // 前进时不允许左轮后退
-                }
-                if (target_right < 0)
-                {
-                    target_right = 0;  // 前进时不允许右轮后退
-                }
+                target_left = 0;
             }
-            // basic_speed = 0时不限制，允许负值实现原地转向
+            if (target_right < 0)
+            {
+                target_right = 0;
+            }
         }
     }
     // ==================== 速度环调试模式 ====================
