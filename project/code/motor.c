@@ -113,13 +113,17 @@ void motor_reset(void)
     // 4. 清空方向环计数器
     direction_counter = 0;
     
-    // 5. 重置编码器卡尔曼滤波器状态
+    // 5. 清空编码器硬件计数器（⚠️ 关键！避免reset后推车产生的脉冲累积）
+    encoder_clear_count(ENCODER_LEFT);
+    encoder_clear_count(ENCODER_RIGHT);
+    
+    // 6. 重置编码器卡尔曼滤波器状态（在清空硬件计数器之后）
     extern KalmanFilter_t encoder_left_kalman;
     extern KalmanFilter_t encoder_right_kalman;
     KalmanFilter_Init(&encoder_left_kalman, ENCODER_KALMAN_Q, ENCODER_KALMAN_R, 0.0f);
     KalmanFilter_Init(&encoder_right_kalman, ENCODER_KALMAN_Q, ENCODER_KALMAN_R, 0.0f);
     
-    printf("[MOTOR] Reset - All states cleared (PID + Targets + Encoder Filters)\r\n");
+    printf("[MOTOR] Reset - All states cleared (PID + Targets + Encoder Filters + HW Counters)\r\n");
 }
 
 /*********************************************************************************************************************
@@ -184,6 +188,14 @@ void motor_process(void)
             {
                 target_left  = basic_speed + (int16)(direction_output * inner_wheel_ratio);  // 左轮是内轮
                 target_right = basic_speed - (int16)(direction_output * outer_wheel_ratio);  // 右轮是外轮
+            }
+            if(target_left < 0)
+            {
+                target_left = 0;
+            }
+            if(target_right < 0)
+            {
+                target_right = 0;
             }
         }
     }
