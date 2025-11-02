@@ -11,11 +11,11 @@
 #include <string.h>
 
 // ==================== 速度环PID状态 ====================
-static pid_t pid_speed_left;        // 左轮速度环PID
-static pid_t pid_speed_right;       // 右轮速度环PID
+pid_t pid_speed_left;        // 左轮速度环PID（外部可访问，用于PID重置）
+pid_t pid_speed_right;       // 右轮速度环PID（外部可访问，用于PID重置）
 
 // ==================== 方向环PID状态 ====================
-static pid_t pid_direction;         // 方向环PID
+pid_t pid_direction;         // 方向环PID（外部可访问，用于PID重置）
 
 // 速度环目标值(编码器增量)
 static int16 target_left = 0;
