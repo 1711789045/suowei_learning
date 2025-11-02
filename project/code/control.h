@@ -23,6 +23,16 @@
 extern uint8 car_running;           // 小车运行状态（0=停止，1=运行）
 extern uint8 stop_flag;             // 停车标志位
 
+// ==================== 发车状态机 ====================
+typedef enum
+{
+    START_IDLE = 0,      // 空闲状态
+    START_ALIGN,         // 原地调整方向（basic_speed=0）
+    START_ACCEL_30,      // 30%加速
+    START_ACCEL_60,      // 60%加速
+    START_RUNNING        // 正常运行（100%速度）
+} start_state_t;
+
 // ==================== API函数声明 ====================
 
 /**
@@ -59,7 +69,20 @@ void stop_car(void);
  */
 void stop_detection(void);
 
+/**
+ * @brief  发车状态机处理（主循环调用）
+ * @param  无
+ * @return 无
+ * @note   非阻塞方式执行发车时序，允许图像处理和方向环持续工作
+ */
+void start_car_process(void);
+
 #endif // _CONTROL_H_
+
+
+
+
+
 
 
 

@@ -25,6 +25,11 @@
 uint8 car_running = 0;              // 小车运行状态（0=停止，1=运行）
 uint8 stop_flag = 0;                // 停车标志位
 
+// ==================== 发车状态机变量 ====================
+static start_state_t start_state = START_IDLE;   // 当前状态
+static uint16 start_counter = 0;                 // 状态计数器（每次motor_process递增）
+static int16 target_speed_saved = 0;             // 保存的目标速度
+
 // ==================== 函数实现 ====================
 
 /**
@@ -84,31 +89,19 @@ void start_car(void)
         return;
     }
     
-    // 倒计时显示
-    ips114_clear();
-    ips114_show_string(40, 40, "Starting in 3...");
-    system_delay_ms(1000);
-    
-    ips114_clear();
-    ips114_show_string(40, 40, "Starting in 2...");
-    system_delay_ms(1000);
-    
-    ips114_clear();
-    ips114_show_string(40, 40, "Starting in 1...");
-    system_delay_ms(1000);
-    
+
     // 清屏（关闭显示）
     ips114_clear();
     
-    // ========== 新发车时序：先原地调整方向1秒，再前进 ==========
+    // ========== 启动状态机发车（非阻塞） ==========
     
     // 1. 保存预设的basic_speed
-    int16 target_speed = basic_speed;
+    target_speed_saved = basic_speed;
     
-    // 2. 将basic_speed置为0（原地调整方向阶段）
+    // 2. 将basic_speed置为0（准备原地调整）
     basic_speed = 0;
     
-    // 3. 重置电机控制系统所有状态（PID+目标值+实际值+滤波器）
+    // 3. 重置电机控制系统所有状态
     motor_reset();
 
     // 4. 设置运行状态
@@ -119,22 +112,68 @@ void start_car(void)
     // 5. 退出菜单
     menu_exit();
     
-    // 6. 延时1秒（原地调整方向，对准中线）
-    system_delay_ms(1000);
-    
-    // ========== 渐进式加速：分3阶段平滑启动，避免高速发车失控 ==========
-    
-    // 第1阶段：30%速度（校正姿态，确保对准中线）
-    basic_speed = (int16)(target_speed * 0.3f);
-    system_delay_ms(500);  // 持续500ms
-    
-    // 第2阶段：60%速度（平滑加速）
-    basic_speed = (int16)(target_speed * 0.6f);
-    system_delay_ms(500);  // 持续500ms
-    
-    // 第3阶段：100%速度（正常巡线）
-    basic_speed = target_speed;
+    // 6. 启动状态机（从原地调整状态开始）
+    start_state = START_ALIGN;
+    start_counter = 0;  // 重置计数器
 
+}
+
+/**
+ * @brief  发车状态机处理（主循环调用）
+ * @param  无
+ * @return 无
+ * @note   非阻塞方式执行发车时序，允许图像处理和方向环持续工作
+ */
+void start_car_process(void)
+{
+    // 只在非空闲状态下执行
+    if (start_state == START_IDLE)
+    {
+        return;
+    }
+    
+    // 递增计数器（主循环每次调用）
+    start_counter++;
+    
+    // 状态机（基于计数器，假设主循环约5ms一次，200次=1秒，100次=0.5秒）
+    switch (start_state)
+    {
+        case START_ALIGN:  // 原地调整状态（basic_speed=0）
+            basic_speed = 0;
+            if (start_counter >= 200)  // 约1秒（200 * 5ms = 1000ms）
+            {
+                start_state = START_ACCEL_30;
+                start_counter = 0;  // 重置计数器
+            }
+            break;
+            
+        case START_ACCEL_30:  // 30%加速状态
+            basic_speed = (int16)(target_speed_saved * 0.3f);
+            if (start_counter >= 100)  // 约0.5秒（100 * 5ms = 500ms）
+            {
+                start_state = START_ACCEL_60;
+                start_counter = 0;
+            }
+            break;
+            
+        case START_ACCEL_60:  // 60%加速状态
+            basic_speed = (int16)(target_speed_saved * 0.6f);
+            if (start_counter >= 100)  // 约0.5秒
+            {
+                start_state = START_RUNNING;
+                start_counter = 0;
+            }
+            break;
+            
+        case START_RUNNING:  // 正常运行状态（100%速度）
+            basic_speed = target_speed_saved;
+            start_state = START_IDLE;  // 完成，回到空闲状态
+            break;
+            
+        default:
+            start_state = START_IDLE;
+            break;
+    }
 }
 
 /**

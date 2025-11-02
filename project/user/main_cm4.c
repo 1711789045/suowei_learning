@@ -170,6 +170,9 @@ int main(void)
         }
         else           // 小车运行模式（发车后）
         {
+            // 发车状态机处理（非阻塞）
+            start_car_process();
+            
             // 图像处理（不显示，仅计算）
             if(mt9v03x_finish_flag)
             {
