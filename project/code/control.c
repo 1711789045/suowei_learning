@@ -100,15 +100,29 @@ void start_car(void)
     // 清屏（关闭显示）
     ips114_clear();
     
-    // 设置运行状态
+    // ========== 新发车时序：先原地调整方向1秒，再前进 ==========
+    
+    // 1. 保存预设的basic_speed
+    int16 target_speed = basic_speed;
+    
+    // 2. 将basic_speed置为0（原地调整方向阶段）
+    basic_speed = 0;
+    
+    // 3. 设置运行状态
     car_running = 1;
     
-    // 开启速度环和方向环
+    // 4. 开启速度环和方向环（此时basic_speed=0，车辆原地调整方向）
     speed_debug_enable = 1;
     direction_debug_enable = 1;
     
-    // 退出菜单
+    // 5. 退出菜单
     menu_exit();
+    
+    // 6. 延时1秒（原地调整方向，对准中线）
+    system_delay_ms(1000);
+    
+    // 7. 恢复basic_speed为预设值（开始前进）
+    basic_speed = target_speed;
 }
 
 /**
@@ -127,8 +141,6 @@ void stop_car(void)
     motor_set_target_left(0);
     motor_set_target_right(0);
     
-    // 3. 延时1000ms，让速度环执行刹车
-    system_delay_ms(1000);
     
     // 4. 关闭速度环
     speed_debug_enable = 0;
