@@ -28,6 +28,10 @@
 #define ENCODER_KALMAN_Q            (0.01f)                                // 过程噪声
 #define ENCODER_KALMAN_R            (2.0f)                                 // 测量噪声
 
+// 卡尔曼滤波器状态（外部可访问，用于重置）
+extern KalmanFilter_t encoder_left_kalman;
+extern KalmanFilter_t encoder_right_kalman;
+
 // API函数声明
 void encoder_init(void);                                                   // 初始化编码器
 int16 encoder_get_left(void);                                              // 获取左编码器增量(卡尔曼滤波后)

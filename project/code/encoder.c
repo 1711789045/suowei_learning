@@ -8,9 +8,9 @@
 
 #include "encoder.h"
 
-// 左右编码器卡尔曼滤波器
-static KalmanFilter_t encoder_left_kalman;
-static KalmanFilter_t encoder_right_kalman;
+// 左右编码器卡尔曼滤波器（外部可访问，用于重置）
+KalmanFilter_t encoder_left_kalman;
+KalmanFilter_t encoder_right_kalman;
 
 /*********************************************************************************************************************
 * 函数名称: encoder_init

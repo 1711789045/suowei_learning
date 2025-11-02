@@ -44,6 +44,7 @@ extern pid_t pid_speed_right;       // 右轮速度环PID
 extern pid_t pid_direction;         // 方向环PID
 // API函数声明
 void motor_init(void);                                                     // 初始化电机系统
+void motor_reset(void);                                                    // 重置电机控制状态(发车时调用)
 void motor_set_target_left(int16 target);                                  // 设置左电机目标值(编码器增量)
 void motor_set_target_right(int16 target);                                 // 设置右电机目标值(编码器增量)
 void motor_process(void);                                                  // 电机控制周期(5ms调用一次)

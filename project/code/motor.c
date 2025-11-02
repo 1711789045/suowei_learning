@@ -88,6 +88,41 @@ void motor_init(void)
 }
 
 /*********************************************************************************************************************
+* 函数名称: motor_reset
+* 功能说明: 重置电机控制系统所有状态(发车前调用)
+* 参数说明: 无
+* 返回值:   无
+* 备注:     清零PID状态、目标值、实际值、编码器滤波器状态
+*           避免上次运行的残留状态影响本次控制
+********************************************************************************************************************/
+void motor_reset(void)
+{
+    // 1. 重置速度环PID状态
+    pid_reset(&pid_speed_left);
+    pid_reset(&pid_speed_right);
+    
+    // 2. 重置方向环PID状态
+    pid_reset(&pid_direction);
+    
+    // 3. 清空目标值和实际值
+    target_left = 0;
+    target_right = 0;
+    actual_left = 0;
+    actual_right = 0;
+    
+    // 4. 清空方向环计数器
+    direction_counter = 0;
+    
+    // 5. 重置编码器卡尔曼滤波器状态
+    extern KalmanFilter_t encoder_left_kalman;
+    extern KalmanFilter_t encoder_right_kalman;
+    KalmanFilter_Init(&encoder_left_kalman, ENCODER_KALMAN_Q, ENCODER_KALMAN_R, 0.0f);
+    KalmanFilter_Init(&encoder_right_kalman, ENCODER_KALMAN_Q, ENCODER_KALMAN_R, 0.0f);
+    
+    printf("[MOTOR] Reset - All states cleared (PID + Targets + Encoder Filters)\r\n");
+}
+
+/*********************************************************************************************************************
 * 函数名称: motor_set_target_left
 * 功能说明: 设置左电机目标值
 * 参数说明: target - 目标编码器增量值(带符号,负数表示反转)

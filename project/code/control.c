@@ -108,21 +108,23 @@ void start_car(void)
     // 2. 将basic_speed置为0（原地调整方向阶段）
     basic_speed = 0;
     
-    // 3. 设置运行状态
+    // 3. 重置电机控制系统所有状态（PID+目标值+实际值+滤波器）
+    motor_reset();
+
+    // 4. 设置运行状态
     car_running = 1;
-    
-    // 4. 开启速度环和方向环（此时basic_speed=0，车辆原地调整方向）
-    speed_debug_enable = 1;
+    speed_debug_enable = 1;    
     direction_debug_enable = 1;
     
     // 5. 退出菜单
     menu_exit();
     
-    // 6. 延时1秒（原地调整方向，对准中线）
+    // 6. 延时1秒（原地调整方向，对准中线）?? 重要：不要删除这个延时！
     system_delay_ms(1000);
     
     // 7. 恢复basic_speed为预设值（开始前进）
     basic_speed = target_speed;
+
 }
 
 /**
