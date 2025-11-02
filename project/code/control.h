@@ -29,8 +29,7 @@ typedef enum
 {
     START_IDLE = 0,      // 空闲状态
     START_ALIGN,         // 原地调整方向（basic_speed=0）
-    START_ACCEL_30,      // 30%加速
-    START_ACCEL_60,      // 60%加速
+    START_ACCEL,         // 线性加速（0%→100%）
     START_RUNNING        // 正常运行（100%速度）
 } start_state_t;
 

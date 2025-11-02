@@ -128,6 +128,7 @@ void start_car(void)
 void start_car_process(void)
 {
     uint32 elapsed_time;
+    float accel_ratio;
     
     // 只在非空闲状态下执行
     if (start_state == START_IDLE)
@@ -145,23 +146,24 @@ void start_car_process(void)
             basic_speed = 0;
             if (elapsed_time >= 1000)  // 精确1秒
             {
-                start_state = START_ACCEL_30;
+                start_state = START_ACCEL;
                 start_timestamp = system_time_ms;  // 重置时间戳
             }
             break;
             
-        case START_ACCEL_30:  // 30%加速状态
-            basic_speed = (int16)(target_speed_saved * 0.3f);
-            if (elapsed_time >= 500)  // 精确500ms
-            {
-                start_state = START_ACCEL_60;
-                start_timestamp = system_time_ms;
-            }
-            break;
+        case START_ACCEL:  // 线性加速状态（0%→100%，持续1秒）
+            // 线性加速公式: speed = target × (elapsed_time / 1000)
+            // elapsed_time: 0→1000ms
+            // accel_ratio: 0.0→1.0
+            accel_ratio = (float)elapsed_time / 1000.0f;
             
-        case START_ACCEL_60:  // 60%加速状态
-            basic_speed = (int16)(target_speed_saved * 0.6f);
-            if (elapsed_time >= 500)  // 精确500ms
+            // 限制在[0, 1]范围内
+            if (accel_ratio > 1.0f)
+                accel_ratio = 1.0f;
+            
+            basic_speed = (int16)(target_speed_saved * accel_ratio);
+            
+            if (elapsed_time >= 1000)  // 加速完成（1秒）
             {
                 start_state = START_RUNNING;
                 start_timestamp = system_time_ms;
