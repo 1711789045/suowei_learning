@@ -144,6 +144,8 @@ void system_init(void)
         printf("  System ready\r\n");
         printf("========================================\r\n\r\n");
     }
+
+    imu660ra_init();
 }
 
 /**

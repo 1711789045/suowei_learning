@@ -177,3 +177,5 @@ float MedianLowPassFilter_Update(MedianLowPassFilter_t *filter, float input)
     return LowPassFilter_Update(&filter->lowpass, median_out);
 }
 
+
+

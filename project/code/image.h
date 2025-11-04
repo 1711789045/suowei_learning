@@ -149,4 +149,19 @@ float calculate_curvature(void);                  // 计算赛道曲率
 void adjust_weight_by_curvature(float curvature); // 根据曲率调整权重
 void dynamic_weight_adjust(void);                 // 动态前瞻权重主函数
 
+// 老十字识别函数（状态机版本，cross_enable=2时使用）
+void Find_Down_Point(int16 start, int16 end);      // 查找下拐点
+void Find_Up_Point(int16 start, int16 end);        // 查找上拐点
+int16 continuity_right(uint8 start, uint8 end);    // 右边连续性判断
+int16 continuity_left(uint8 start, uint8 end);     // 左边连续性判断
+void draw_Rline_k(int16 startx, int16 starty, int16 endy, float dx);  // 补线右（带增长率）
+void add_Rline_k(int16 startx, int16 starty, int16 endy, int16 endx); // 右两点间连线
+void draw_Lline_k(int16 startx, int16 starty, int16 endy, float dx);  // 补线左（带增长率）
+void add_Lline_k(int16 startx, int16 starty, int16 endy, int16 endx); // 左两点间连线
+void dx1_left_average(float dx);                   // 滑动平均滤波左
+void dx2_right_average(float dx);                  // 滑动平均滤波右
+void lenthen_Left_bondarise(int16 start);          // 自上而下补左线
+void lenthen_Right_bondarise(int16 start);         // 自上而下补右线
+void image_cross_analysis_OLD(void);               // 老十字主函数
+
 #endif

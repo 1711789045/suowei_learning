@@ -215,15 +215,15 @@ uint16 rightfollowline[IMAGE_H] = {0};     // 右跟随线（补线后的边线�
 float dx1[5] = {0};                        // 左边线滑动平均滤波数组
 float dx2[5] = {0};                        // 右边线滑动平均滤波数组
 
-// ==================== 旧十字状态枚举（已弃用，改用MM32简单版本）====================
+// ==================== 旧十字状态枚举（状态机版本，cross_enable=2时使用）====================
 // 十字状态枚举定义
-// enum CrossStatus {
-//     CROSS_STRAIGHT,    // 直道行驶
-//     CROSS_ROAD,        // 十字路口
-//     CROSS_ROAD_L,      // 左斜入十字
-//     CROSS_ROAD_R       // 右斜入十字
-// };
-// static enum CrossStatus cross_status = CROSS_STRAIGHT;
+enum CrossStatus {
+    CROSS_STRAIGHT,    // 直道行驶
+    CROSS_ROAD,        // 十字路口
+    CROSS_ROAD_L,      // 左斜入十字
+    CROSS_ROAD_R       // 右斜入十字
+};
+static enum CrossStatus cross_status = CROSS_STRAIGHT;
 
 /**
  * @brief 从MT9V03X摄像头获取图像
@@ -873,13 +873,12 @@ void image_get_left_err(void){
 	}
 }
 
-// ==================== 旧十字补线代码（已弃用，改用MM32简单版本）====================
-/*  ========== 开始注释旧十字识别代码 ==========
+// ==================== 老十字补线辅助函数（状态机版本，cross_enable=2时使用）====================
 
 /**
  * @brief 找下面的两个拐点，供十字使用
- * @param start 搜索的范围起点
- * @param end 搜索的范围终点
+ * @param start 搜索的范围起点（从下往上搜索）
+ * @param end 搜索的范围终点（限制>=50，避免上端杂物）
  * @note 运行完之后查看 Right_Down_Find 和 Left_Down_Find，没找到时为0
  */
 void Find_Down_Point(int16 start, int16 end)
@@ -898,8 +897,8 @@ void Find_Down_Point(int16 start, int16 end)
 		start = IMAGE_H - 1 - 3;
 	if(end >= IMAGE_H - 5)
 		end = IMAGE_H - 5;
-	if(end <= 5)
-		end = 5;
+	if(end <= 50)  // 修改：上端限制在第50行，避免上端杂物干扰
+		end = 50;
 
 	for(i = start; i >= end; i--)
 	{
@@ -963,10 +962,10 @@ void Find_Up_Point(int16 start, int16 end)
 	// start<end 由上往下
 	if(end >= IMAGE_H - 5)
 		end = IMAGE_H - 5;
-	if(end <= 5)  // 即使最长白列非常长，也要舍弃部分点，防止数组越界
-		end = 5;
-	if(start <= 5)  // 下面5行数据不稳定，不能作为边界点来判断，舍弃
-		start = 5;
+	if(end <= 50)  // 修改：上端限制在第50行，避免上端杂物干扰
+		end = 50;
+	if(start <= 50)  // 修改：起始行也限制在第50行
+		start = 50;
 	if(start < stop_search_row + 5) {
 		start = stop_search_row + 5;
 	}
@@ -1023,8 +1022,8 @@ int16 continuity_right(uint8 start, uint8 end)
 
 	if(start >= IMAGE_H - 2)  // 数组越界保护
 		start = IMAGE_H - 2;
-	if(end <= 1) {
-		end = 1;
+	if(end <= 50) {  // 修改：上端限制在第50行
+		end = 50;
 	}
 	if(start < end) {
 		uint8 t = start;
@@ -1057,8 +1056,8 @@ int16 continuity_left(uint8 start, uint8 end)
 
 	if(start >= IMAGE_H - 2)  // 数组越界保护
 		start = IMAGE_H - 2;
-	if(end <= 1) {
-		end = 1;
+	if(end <= 50) {  // 修改：上端限制在第50行
+		end = 50;
 	}
 	if(start < end) {
 		uint8 t = start;
@@ -1238,13 +1237,13 @@ void lenthen_Right_bondarise(int16 start)
 	}
 }
 
-#if 0  // ========== 旧十字主函数image_cross_analysis_OLD（已弃用）==========
 /**
- * @brief 旧的十字补线主函数（已弃用，改用MM32简化版本）
+ * @brief 旧的十字补线主函数（状态机版本，cross_enable=2时使用）
  * 功能说明：
  * 1. 使用四点检测法：查找左上、左下、右上、右下四个拐点
  * 2. 使用状态机管理十字识别：CROSS_STRAIGHT -> CROSS_ROAD/CROSS_ROAD_L/CROSS_ROAD_R
  * 3. 智能补线策略：根据拐点情况自适应补线
+ * 4. 搜索范围：从第50行开始，避免上端杂物干扰
  */
 void image_cross_analysis_OLD(void)
 {
@@ -1252,13 +1251,16 @@ void image_cross_analysis_OLD(void)
 	memcpy(leftfollowline, left_edge_line, sizeof(left_edge_line));
 	memcpy(rightfollowline, right_edge_line, sizeof(right_edge_line));
 
-	// 查找上下半段边界点
-	Find_Up_Point(IMAGE_H - 1, stop_search_row);      // 查找上半段边界点（左上、右上）
-	Find_Down_Point(IMAGE_H - 1, stop_search_row);    // 查找下半段边界点（左下、右下）
+	// 确保搜索截止行不低于第50行
+	uint8 safe_stop_row = (stop_search_row < 50) ? 50 : stop_search_row;
 
-	// 左右连续性判断
-	continuity_pointLeft[0] = continuity_left(IMAGE_H - 1, stop_search_row + 5);    // 左连续性判断
-	continuity_pointRight[0] = continuity_right(IMAGE_H - 1, stop_search_row + 5);  // 右连续性判断
+	// 查找上下半段边界点（从第50行开始）
+	Find_Up_Point(IMAGE_H - 1, safe_stop_row);      // 查找上半段边界点（左上、右上）
+	Find_Down_Point(IMAGE_H - 1, safe_stop_row);    // 查找下半段边界点（左下、右下）
+
+	// 左右连续性判断（从第50行开始）
+	continuity_pointLeft[0] = continuity_left(IMAGE_H - 1, safe_stop_row + 5);    // 左连续性判断
+	continuity_pointRight[0] = continuity_right(IMAGE_H - 1, safe_stop_row + 5);  // 右连续性判断
 	continuity_pointLeft[1] = left_edge_line[continuity_pointLeft[0]];              // 左连续性点列
 	continuity_pointRight[1] = right_edge_line[continuity_pointRight[0]];           // 右连续性点列
 
@@ -1271,12 +1273,12 @@ void image_cross_analysis_OLD(void)
 
 	// ==================== 直道状态：检测是否进入十字 ====================
 	if(cross_status == CROSS_STRAIGHT) {
-		// 只有在截止行较近时才检测十字
-		if(stop_search_row < 50) {
+		// 只有在截止行较近时才检测十字（使用safe_stop_row）
+		if(safe_stop_row < 70) {  // 修改：由于起始行是50，阈值相应调整
 			// 情况1：正入十字 - 左右不连续点都找到，且左右上拐点都找到
 			if(continuity_pointLeft[0] != 0 && continuity_pointRight[0] != 0 &&
 			   Right_Up_Find != 0 && Left_Up_Find != 0 &&
-			   (Right_Up_Find > stop_search_row - 2 && Left_Up_Find > stop_search_row - 2))
+			   (Right_Up_Find > safe_stop_row - 2 && Left_Up_Find > safe_stop_row - 2))
 			{
 				cross_status = CROSS_ROAD;  // 进入十字路口状态
 				cross_flag = 1;
@@ -1285,7 +1287,7 @@ void image_cross_analysis_OLD(void)
 
 			// 情况2：左斜入十字 - 左不连续点找到且右不连续点未找到，且左上拐点找到
 			if(continuity_pointLeft[0] != 0 && continuity_pointRight[0] == 0 &&
-			   Left_Up_Find != 0 && Left_Up_Find > stop_search_row - 2)
+			   Left_Up_Find != 0 && Left_Up_Find > safe_stop_row - 2)
 			{
 				cross_status = CROSS_ROAD_L;  // 进入左斜入十字状态
 				cross_flag = 1;
@@ -1294,7 +1296,7 @@ void image_cross_analysis_OLD(void)
 
 			// 情况3：右斜入十字 - 左不连续点未找到且右不连续点找到，且右上拐点找到
 			if(continuity_pointLeft[0] == 0 && continuity_pointRight[0] != 0 &&
-			   Right_Up_Find != 0 && Right_Up_Find > stop_search_row - 2)
+			   Right_Up_Find != 0 && Right_Up_Find > safe_stop_row - 2)
 			{
 				cross_status = CROSS_ROAD_R;  // 进入右斜入十字状态
 				cross_flag = 1;
@@ -1411,9 +1413,8 @@ void image_cross_analysis_OLD(void)
 		memcpy(right_edge_line, rightfollowline, sizeof(right_edge_line));
 	}
 }
-#endif  // ========== 旧十字主函数image_cross_analysis_OLD结束 ==========
 
-// ==================== MM32十字识别代码（简化版本）====================
+// ==================== MM32十字识别代码（简化版本，cross_enable=1时使用）====================
 
 /**
  * @brief 查找左边跳变点
@@ -1577,8 +1578,8 @@ void image_cross_analysis(void)
 		// ========== 左边补线 ==========
 		start_point = 0;
 		end_point = 0;
-		start_point = image_find_left_jump_point(IMAGE_H - 5, IMAGE_H/4, 0);  // 从上往下找上拐点
-		end_point = image_find_left_jump_point(IMAGE_H - 5, IMAGE_H/3, 1);    // 从下往上找下拐点
+		start_point = image_find_left_jump_point(IMAGE_H - 5, 50, 0);  // 从上往下找上拐点（从第50行开始）
+		end_point = image_find_left_jump_point(IMAGE_H - 5, 50, 1);    // 从下往上找下拐点（到第50行结束）
 		
 		if(end_point && start_point) {
 			image_connect_point(left_edge_line, end_point, start_point);  // 两点连线
@@ -1593,8 +1594,8 @@ void image_cross_analysis(void)
 		// ========== 右边补线 ==========
 		start_point = 0;
 		end_point = 0;
-		start_point = image_find_right_jump_point(IMAGE_H - 5, IMAGE_H/4, 0);  // 从上往下找上拐点
-		end_point = image_find_right_jump_point(IMAGE_H - 5, IMAGE_H/3, 1);    // 从下往上找下拐点
+		start_point = image_find_right_jump_point(IMAGE_H - 5, 50, 0);  // 从上往下找上拐点（从第50行开始）
+		end_point = image_find_right_jump_point(IMAGE_H - 5, 50, 1);    // 从下往上找下拐点（到第50行结束）
 		
 		if(end_point && start_point) {
 			image_connect_point(right_edge_line, end_point, start_point);  // 两点连线
@@ -1621,9 +1622,15 @@ void image_process(uint16 display_width,uint16 display_height,uint8 mode){
 	search_reference_col(user_image);
 	search_line(user_image);
 
-	// 根据开关决定是否启用十字识别
-	if(cross_enable && !circle_flag){
-		image_cross_analysis();
+	// 根据开关决定使用哪种十字识别
+	// cross_enable = 0: 关闭十字识别
+	// cross_enable = 1: 简单版十字（MM32版本，基于宽度判断）
+	// cross_enable = 2: 复杂版老十字（状态机版本，四点检测法）
+	if(cross_enable == 1 && !circle_flag){
+		image_cross_analysis();  // 简单版十字
+	}
+	else if(cross_enable == 2 && !circle_flag){
+		image_cross_analysis_OLD();  // 复杂版老十字
 	}
 
 	// 动态前瞻权重调整（在计算加权中线之前调用）
