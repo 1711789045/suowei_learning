@@ -28,7 +28,6 @@ volatile uint32 system_time_ms = 0; // 系统运行时间(ms)，在PIT中断中递增
 
 // ==================== 发车状态机变量 ====================
 static start_state_t start_state = START_IDLE;   // 当前状态
-static start_state_t last_state = START_IDLE;    // 上次状态（用于检测状态切换）
 static uint32 start_timestamp = 0;               // 状态开始时间戳(ms)
 static int16 target_speed_saved = 0;             // 保存的目标速度
 
@@ -100,16 +99,21 @@ void start_car(void)
     // 1. 保存预设的basic_speed
     target_speed_saved = basic_speed;
     
-    // 2. 设置运行状态
+    // 2. 将basic_speed置为0（准备原地调整）
+    basic_speed = 0;
+    
+    // 3. 重置电机控制系统所有状态
+    motor_reset();
+
+    // 4. 设置运行状态
     car_running = 1;
     speed_debug_enable = 1;    
     direction_debug_enable = 1;
     
-    // 3. 退出菜单
+    // 5. 退出菜单
     menu_exit();
     
-    // 4. 启动状态机（从原地调整状态开始）
-    //    motor_reset()将在状态机进入START_ALIGN时调用
+    // 6. 启动状态机（从原地调整状态开始）
     start_state = START_ALIGN;
     start_timestamp = system_time_ms;  // 记录开始时间
 
@@ -130,17 +134,6 @@ void start_car_process(void)
     if (start_state == START_IDLE)
     {
         return;
-    }
-    
-    // 检测状态切换（刚进入新状态时执行初始化）
-    if (start_state != last_state)
-    {
-        // 刚从IDLE切换到START_ALIGN状态时，重置电机控制系统
-        if (last_state == START_IDLE && start_state == START_ALIGN)
-        {
-            motor_reset();  // ?? 在原地调整之前清零所有状态（PID+目标值+实际值+编码器滤波器+硬件计数器）
-        }
-        last_state = start_state;
     }
     
     // 计算已经过的时间（基于精确的定时器计数）

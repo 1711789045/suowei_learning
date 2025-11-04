@@ -8,6 +8,7 @@
 
 #include "motor.h"
 #include "image.h"
+#include "control.h"  // 引入car_running变量，用于区分调试模式和发车模式
 #include <string.h>
 
 // ==================== 速度环PID状态 ====================
@@ -227,7 +228,8 @@ void motor_process(void)
     motor_set_pwm_right((int16)speed_out_right);
     
     // ==================== 调试输出 ====================
-    if (speed_debug_enable || direction_debug_enable)
+    // 只在调试模式（非发车运行）时输出数据
+    if ((speed_debug_enable || direction_debug_enable) && !car_running)
     {
         static uint8 debug_cnt = 0;
         debug_cnt++;
@@ -255,7 +257,7 @@ void motor_process(void)
             }
         }
         
-        // VOFA+输出
+        // VOFA+输出（只在调试模式，不在发车时）
         motor_vofa_send();
     }
 }
