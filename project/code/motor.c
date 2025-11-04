@@ -268,6 +268,7 @@ void motor_process(void)
 * 参数说明: pwm - PWM值(正数=正转, 负数=反转, 0=停止)
 * 返回值:   无
 * 备注:     DRV8701E: DIR引脚控制方向, PWM通道控制速度
+*           注意：DIR电平和正反转关系根据实际硬件连接确定
 ********************************************************************************************************************/
 static void motor_set_pwm_left(int16 pwm)
 {
@@ -277,15 +278,15 @@ static void motor_set_pwm_left(int16 pwm)
     else if (pwm < -MOTOR_PWM_MAX_DUTY)
         pwm = -MOTOR_PWM_MAX_DUTY;
 
-    // DRV8701E控制方式
+    // DRV8701E控制方式（根据实际硬件连接）
     if (pwm >= 0)  // 正转
     {
-        gpio_set_level(MOTOR_LEFT_DIR, GPIO_LOW);  // DIR=HIGH 正转
+        gpio_set_level(MOTOR_LEFT_DIR, GPIO_LOW);   // DIR=LOW 正转（实际硬件）
         pwm_set_duty(MOTOR_LEFT_PWM, pwm);          // PWM设置速度
     }
     else  // 反转
     {
-        gpio_set_level(MOTOR_LEFT_DIR, GPIO_HIGH);   // DIR=LOW 反转
+        gpio_set_level(MOTOR_LEFT_DIR, GPIO_HIGH);  // DIR=HIGH 反转（实际硬件）
         pwm_set_duty(MOTOR_LEFT_PWM, -pwm);         // PWM设置速度(取绝对值)
     }
 }
@@ -296,6 +297,7 @@ static void motor_set_pwm_left(int16 pwm)
 * 参数说明: pwm - PWM值(正数=正转, 负数=反转, 0=停止)
 * 返回值:   无
 * 备注:     DRV8701E: DIR引脚控制方向, PWM通道控制速度
+*           注意：DIR电平和正反转关系根据实际硬件连接确定
 ********************************************************************************************************************/
 static void motor_set_pwm_right(int16 pwm)
 {
@@ -305,15 +307,15 @@ static void motor_set_pwm_right(int16 pwm)
     else if (pwm < -MOTOR_PWM_MAX_DUTY)
         pwm = -MOTOR_PWM_MAX_DUTY;
 
-    // DRV8701E控制方式
+    // DRV8701E控制方式（根据实际硬件连接）
     if (pwm >= 0)  // 正转
     {
-        gpio_set_level(MOTOR_RIGHT_DIR, GPIO_LOW);  // DIR=HIGH 正转
+        gpio_set_level(MOTOR_RIGHT_DIR, GPIO_LOW);   // DIR=LOW 正转（实际硬件）
         pwm_set_duty(MOTOR_RIGHT_PWM, pwm);          // PWM设置速度
     }
     else  // 反转
     {
-        gpio_set_level(MOTOR_RIGHT_DIR, GPIO_HIGH);   // DIR=LOW 反转
+        gpio_set_level(MOTOR_RIGHT_DIR, GPIO_HIGH);  // DIR=HIGH 反转（实际硬件）
         pwm_set_duty(MOTOR_RIGHT_PWM, -pwm);         // PWM设置速度(取绝对值)
     }
 }

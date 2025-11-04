@@ -14,8 +14,8 @@
 
 // ==================== DRV8701E 驱动引脚定义 ====================
 // DRV8701E控制方式：DIR（方向GPIO）+ PWM（速度PWM）
-// DIR=HIGH + PWM → 正转
-// DIR=LOW  + PWM → 反转
+// DIR=LOW  + PWM → 正转（根据实际硬件连接确认）
+// DIR=HIGH + PWM → 反转
 
 // 左电机引脚（电机2）
 #define MOTOR_LEFT_DIR          (P18_6)                                    // 左电机方向控制（普通GPIO）
