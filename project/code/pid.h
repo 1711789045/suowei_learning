@@ -9,7 +9,7 @@
 #define _PID_H_
 
 #include "zf_common_headfile.h"
-
+#include <math.h>
 // PID状态结构体(每个控制对象独立的状态)
 typedef struct
 {
@@ -32,9 +32,11 @@ extern float speed_right_ki;    // 右轮速度环积分系数
 extern float speed_right_kd;    // 右轮速度环微分系数
 
 // ==================== 方向环PID参数 ====================
+extern float direction_kp2;     // 方向环二次项系数（error²）
 extern float direction_kp;      // 方向环比例系数
 extern float direction_ki;      // 方向环积分系数
-extern float direction_kd;      // 方向环微分系数
+extern float direction_kd_img;  // 方向环微分系数（图像误差）
+extern float direction_kd_g;    // 方向环陀螺仪系数（角速度）
 
 // API函数声明
 void pid_init(void);                                                                    // 初始化PID参数

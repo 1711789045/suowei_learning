@@ -7,6 +7,7 @@
 
 #include "pid.h"
 
+
 // ==================== 速度环PID参数（左右轮独立）====================
 float speed_left_kp = 0.0f;     // 左轮比例系数(初值=0)
 float speed_left_ki = 0.0f;     // 左轮积分系数(初值=0)
@@ -17,10 +18,11 @@ float speed_right_ki = 0.0f;    // 右轮积分系数(初值=0)
 float speed_right_kd = 0.0f;    // 右轮微分系数(初值=0)
 
 // ==================== 方向环PID参数 ====================
+float direction_kp2 = 0.0f;
 float direction_kp = 0.0f;      // 比例系数(初值=0)
 float direction_ki = 0.0f;      // 积分系数(初值=0)
-float direction_kd = 0.0f;      // 微分系数(初值=0)
-
+float direction_kd_img = 0.0f;      // 微分系数(初值=0)
+float direction_kd_g = 0.0f;      // 微分系数(初值=0)
 /*********************************************************************************************************************
 * 函数名称: pid_init
 * 功能说明: 初始化PID参数
@@ -41,14 +43,17 @@ void pid_init(void)
     speed_right_kd = 0.0f;
     
     // 方向环PID
+    direction_kp2 = 0.0f;
     direction_kp = 0.0f;
     direction_ki = 0.0f;
-    direction_kd = 0.0f;
+    direction_kd_img = 0.0f;
+    direction_kd_g = 0.0f;      
 
-    printf("[PID] Init OK - Left(Kp=%.2f Ki=%.2f Kd=%.2f) Right(Kp=%.2f Ki=%.2f Kd=%.2f) Direction(Kp=%.2f Ki=%.2f Kd=%.2f)\r\n", 
+    printf("[PID] Init OK - Left(Kp=%.2f Ki=%.2f Kd=%.2f) Right(Kp=%.2f Ki=%.2f Kd=%.2f)\r\n", 
            speed_left_kp, speed_left_ki, speed_left_kd, 
-           speed_right_kp, speed_right_ki, speed_right_kd,
-           direction_kp, direction_ki, direction_kd);
+           speed_right_kp, speed_right_ki, speed_right_kd);
+    printf("[PID] Direction: Kp2=%.3f Kp=%.2f Ki=%.2f Kd_img=%.2f Kd_g=%.2f\r\n",
+           direction_kp2, direction_kp, direction_ki, direction_kd_img, direction_kd_g);
 }
 
 /*********************************************************************************************************************
@@ -119,8 +124,9 @@ float pid_calc_incremental(pid_t *pid, float kp, float ki, float kd, float targe
 ********************************************************************************************************************/
 float pid_calc_position(pid_t *pid, float target, float actual)
 {
+    imu660ra_get_gyro();
     // 计算当前误差 e(k)
-    float error = target - actual;
+    float error = actual - target;
     
     // 积分累加
     pid->integral += error;
@@ -135,7 +141,7 @@ float pid_calc_position(pid_t *pid, float target, float actual)
     float derivative = error - pid->error_last;
     
     // 位置式PID输出
-    float output = direction_kp * error + direction_ki * pid->integral + direction_kd * derivative;
+    float output = direction_kp2 * fabs(error) * error + direction_kp * error + direction_ki * pid->integral + direction_kd_img * derivative + direction_kd_g * imu660ra_gyro_z *0.01;
     
     // 输出限幅
     if (output > 10000.0f)

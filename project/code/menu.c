@@ -1046,38 +1046,48 @@ void menu_example_create(void)
     menu_unit_t *speed_page = menu_create_unit("SpeedPID", MENU_UNIT_PAGE);          // 速度环
     menu_unit_t *image_page = menu_create_unit("Image", MENU_UNIT_PAGE);
 
-    // ========== 方向环三级参数 (位置式PID+差速系数) ==========
+    // ========== 方向环三级参数 (位置式PID+差速系数+二次项+陀螺仪) ==========
     // 定义默认值
-    static float direction_kp_default = 0.0f;
-    static float direction_ki_default = 0.0f;
-    static float direction_kd_default = 0.0f;
-    static float inner_ratio_default = 1.0f;
-    static float outer_ratio_default = 1.0f;
+    static float direction_kp2_default = 0.0f;       // 二次项系数
+    static float direction_kp_default = 0.0f;        // 比例系数
+    static float direction_ki_default = 0.0f;        // 积分系数
+    static float direction_kd_img_default = 0.0f;    // 图像微分系数
+    static float direction_kd_g_default = 0.0f;      // 陀螺仪系数
+    static float inner_ratio_default = 1.0f;         // 内轮系数
+    static float outer_ratio_default = 1.0f;         // 外轮系数
     
     // 创建菜单单元
+    static menu_unit_t* direction_kp2_unit = NULL;
     static menu_unit_t* direction_kp_unit = NULL;
     static menu_unit_t* direction_ki_unit = NULL;
-    static menu_unit_t* direction_kd_unit = NULL;
+    static menu_unit_t* direction_kd_img_unit = NULL;
+    static menu_unit_t* direction_kd_g_unit = NULL;
     static menu_unit_t* inner_ratio_unit = NULL;
     static menu_unit_t* outer_ratio_unit = NULL;
     
+    direction_kp2_unit = menu_create_param("Dir Kp2", &direction_kp2, CONFIG_TYPE_FLOAT, 0.01f, 2, 3);
     direction_kp_unit = menu_create_param("Dir Kp", &direction_kp, CONFIG_TYPE_FLOAT, 0.1f, 2, 2);
     direction_ki_unit = menu_create_param("Dir Ki", &direction_ki, CONFIG_TYPE_FLOAT, 0.01f, 2, 3);
-    direction_kd_unit = menu_create_param("Dir Kd", &direction_kd, CONFIG_TYPE_FLOAT, 0.1f, 2, 2);
+    direction_kd_img_unit = menu_create_param("Dir Kd_img", &direction_kd_img, CONFIG_TYPE_FLOAT, 0.01f, 2, 3);
+    direction_kd_g_unit = menu_create_param("Dir Kd_g", &direction_kd_g, CONFIG_TYPE_FLOAT, 0.01f, 2, 3);
     inner_ratio_unit = menu_create_param("Inner Ratio", &inner_wheel_ratio, CONFIG_TYPE_FLOAT, 0.1f, 2, 2);
     outer_ratio_unit = menu_create_param("Outer Ratio", &outer_wheel_ratio, CONFIG_TYPE_FLOAT, 0.1f, 2, 2);
     
     // 注册到配置系统
+    config_register_item("direction_kp2", &direction_kp2, CONFIG_TYPE_FLOAT, &direction_kp2_default, "Dir Kp2");
     config_register_item("direction_kp", &direction_kp, CONFIG_TYPE_FLOAT, &direction_kp_default, "Dir Kp");
     config_register_item("direction_ki", &direction_ki, CONFIG_TYPE_FLOAT, &direction_ki_default, "Dir Ki");
-    config_register_item("direction_kd", &direction_kd, CONFIG_TYPE_FLOAT, &direction_kd_default, "Dir Kd");
+    config_register_item("direction_kd_img", &direction_kd_img, CONFIG_TYPE_FLOAT, &direction_kd_img_default, "Dir Kd_img");
+    config_register_item("direction_kd_g", &direction_kd_g, CONFIG_TYPE_FLOAT, &direction_kd_g_default, "Dir Kd_g");
     config_register_item("inner_ratio", &inner_wheel_ratio, CONFIG_TYPE_FLOAT, &inner_ratio_default, "Inner Ratio");
     config_register_item("outer_ratio", &outer_wheel_ratio, CONFIG_TYPE_FLOAT, &outer_ratio_default, "Outer Ratio");
     
     // 链接到父页面
+    menu_auto_link_child(direction_kp2_unit, direction_page);
     menu_auto_link_child(direction_kp_unit, direction_page);
     menu_auto_link_child(direction_ki_unit, direction_page);
-    menu_auto_link_child(direction_kd_unit, direction_page);
+    menu_auto_link_child(direction_kd_img_unit, direction_page);
+    menu_auto_link_child(direction_kd_g_unit, direction_page);
     menu_auto_link_child(inner_ratio_unit, direction_page);
     menu_auto_link_child(outer_ratio_unit, direction_page);
 
@@ -1115,7 +1125,7 @@ void menu_example_create(void)
     speed_right_kd_unit = menu_create_param("Right Kd", &speed_right_kd, CONFIG_TYPE_FLOAT, 0.1f, 2, 2);
     
     // ⭐ basic_speed使用临时变量，退出编辑时才更新真实值
-    basic_speed_menu_unit = menu_create_param("Basic Speed", &temp_basic_speed, CONFIG_TYPE_INT16, 10.0f, 3, 0);
+    basic_speed_menu_unit = menu_create_param("Basic Speed", &temp_basic_speed, CONFIG_TYPE_INT16, 100.0f, 3, 0);
 
     // ========== 注册到配置系统（调整顺序以兼容旧Flash）==========
     // 旧Flash顺序：direction(5) → speed(3) → basic_speed(1) → image(2) = 11项
