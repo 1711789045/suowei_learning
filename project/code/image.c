@@ -215,14 +215,15 @@ uint16 rightfollowline[IMAGE_H] = {0};     // 右跟随线（补线后的边线�
 float dx1[5] = {0};                        // 左边线滑动平均滤波数组
 float dx2[5] = {0};                        // 右边线滑动平均滤波数组
 
+// ==================== 旧十字状态枚举（已弃用，改用MM32简单版本）====================
 // 十字状态枚举定义
-enum CrossStatus {
-    CROSS_STRAIGHT,    // 直道行驶
-    CROSS_ROAD,        // 十字路口
-    CROSS_ROAD_L,      // 左斜入十字
-    CROSS_ROAD_R       // 右斜入十字
-};
-static enum CrossStatus cross_status = CROSS_STRAIGHT;
+// enum CrossStatus {
+//     CROSS_STRAIGHT,    // 直道行驶
+//     CROSS_ROAD,        // 十字路口
+//     CROSS_ROAD_L,      // 左斜入十字
+//     CROSS_ROAD_R       // 右斜入十字
+// };
+// static enum CrossStatus cross_status = CROSS_STRAIGHT;
 
 /**
  * @brief 从MT9V03X摄像头获取图像
@@ -512,6 +513,9 @@ uint8 image_find_jump_point(uint16 *edge_line,uint8 down_num,uint8 up_num,uint8 
 	return 0;
 }
 
+// ==================== 以下4个函数已移至文件末尾（MM32版本）====================
+#if 0  // 旧定义已禁用
+
 uint8 image_find_left_jump_point(uint8 down_num,uint8 up_num,uint8 model){
 	uint8 temp_jump_point = 0;
 	uint8 temp_data;
@@ -631,6 +635,8 @@ void image_stretch_point(uint16 *array_value, uint8 num ,uint8 direction){
 		}
 	}
 }
+
+#endif  // 旧定义结束，使用后面的MM32版本
 
 uint8 image_find_circle_point(uint16 *edge_line,uint8 down_num,uint8 up_num){
 	uint8 temp_jump_point = 0;
@@ -867,7 +873,8 @@ void image_get_left_err(void){
 	}
 }
 
-// ==================== 新十字补线辅助函数 ====================
+// ==================== 旧十字补线代码（已弃用，改用MM32简单版本）====================
+/*  ========== 开始注释旧十字识别代码 ==========
 
 /**
  * @brief 找下面的两个拐点，供十字使用
@@ -1231,20 +1238,15 @@ void lenthen_Right_bondarise(int16 start)
 	}
 }
 
+#if 0  // ========== 旧十字主函数image_cross_analysis_OLD（已弃用）==========
 /**
- * @brief 新十字补线主函数（完全替换旧的 image_cross_analysis）
- *
+ * @brief 旧的十字补线主函数（已弃用，改用MM32简化版本）
  * 功能说明：
  * 1. 使用四点检测法：查找左上、左下、右上、右下四个拐点
  * 2. 使用状态机管理十字识别：CROSS_STRAIGHT -> CROSS_ROAD/CROSS_ROAD_L/CROSS_ROAD_R
  * 3. 智能补线策略：根据拐点情况自适应补线
- *
- * 核心流程：
- * - 直道状态：检测是否进入十字（通过连续性和拐点判断）
- * - 十字状态：根据拐点情况进行智能补线
- * - 斜入十字：单边拐点处理
  */
-void image_cross_analysis(void)
+void image_cross_analysis_OLD(void)
 {
 	// 初始化跟随线（补线后的边线）
 	memcpy(leftfollowline, left_edge_line, sizeof(left_edge_line));
@@ -1407,6 +1409,207 @@ void image_cross_analysis(void)
 		// 将补线后的边线复制回原边线数组
 		memcpy(left_edge_line, leftfollowline, sizeof(left_edge_line));
 		memcpy(right_edge_line, rightfollowline, sizeof(right_edge_line));
+	}
+}
+#endif  // ========== 旧十字主函数image_cross_analysis_OLD结束 ==========
+
+// ==================== MM32十字识别代码（简化版本）====================
+
+/**
+ * @brief 查找左边跳变点
+ * @param down_num 下端起始点（大索引值，图像下方）
+ * @param up_num 上端终止点（小索引值，图像上方）
+ * @param model 搜索方向：1=从下到上，0=从上到下
+ * @return 跳变点行号，未找到返回0
+ */
+uint8 image_find_left_jump_point(uint8 down_num, uint8 up_num, uint8 model)
+{
+	uint8 temp_jump_point = 0;
+	
+	if(model) {  // 从下到上搜索
+		temp_jump_point = down_num;
+		for(int i = 0; i < down_num - up_num; i++) {
+			if(left_edge_line[down_num-i] - left_edge_line[down_num-i-5] >= 8 &&
+			   left_edge_line[down_num-i] - left_edge_line[down_num-i-6] >= 8 &&
+			   left_edge_line[down_num-i] - left_edge_line[down_num-i-7] >= 8 &&
+			   func_abs(left_edge_line[down_num-i] - left_edge_line[down_num-i+1]) <= 7 &&
+			   func_abs(left_edge_line[down_num-i] - left_edge_line[down_num-i+2]) <= 10 &&
+			   func_abs(left_edge_line[down_num-i] - left_edge_line[down_num-i+3]) <= 15)
+			{
+				temp_jump_point = (uint8)(down_num - i) + 3;
+				return temp_jump_point;
+			}
+		}
+	}
+	else {  // 从上到下搜索
+		temp_jump_point = up_num;
+		for(int i = 0; i < down_num - up_num; i++) {
+			if(left_edge_line[up_num+i] - left_edge_line[up_num+i+5] >= 8 &&
+			   left_edge_line[up_num+i] - left_edge_line[up_num+i+6] >= 8 &&
+			   left_edge_line[up_num+i] - left_edge_line[up_num+i+7] >= 8 &&
+			   func_abs(left_edge_line[up_num+i] - left_edge_line[up_num+i+1]) <= 7 &&
+			   func_abs(left_edge_line[up_num+i] - left_edge_line[up_num+i+2]) <= 10 &&
+			   func_abs(left_edge_line[up_num+i] - left_edge_line[up_num+i+3]) <= 15)
+			{
+				temp_jump_point = (uint8)(up_num + i) - 3;
+				return temp_jump_point;
+			}
+		}
+	}
+	return 0;
+}
+
+/**
+ * @brief 查找右边跳变点
+ * @param down_num 下端起始点（大索引值，图像下方）
+ * @param up_num 上端终止点（小索引值，图像上方）
+ * @param model 搜索方向：1=从下到上，0=从上到下
+ * @return 跳变点行号，未找到返回0
+ */
+uint8 image_find_right_jump_point(uint8 down_num, uint8 up_num, uint8 model)
+{
+	uint8 temp_jump_point = 0;
+	
+	if(model) {  // 从下到上搜索
+		temp_jump_point = down_num;
+		for(int i = 0; i < down_num - up_num; i++) {
+			if(right_edge_line[down_num-i] - right_edge_line[down_num-i-5] <= -8 &&
+			   right_edge_line[down_num-i] - right_edge_line[down_num-i-6] <= -8 &&
+			   right_edge_line[down_num-i] - right_edge_line[down_num-i-7] <= -8 &&
+			   func_abs(right_edge_line[down_num-i] - right_edge_line[down_num-i+1]) <= 7 &&
+			   func_abs(right_edge_line[down_num-i] - right_edge_line[down_num-i+2]) <= 10 &&
+			   func_abs(right_edge_line[down_num-i] - right_edge_line[down_num-i+3]) <= 15)
+			{
+				temp_jump_point = (uint8)(down_num - i) + 3;
+				return temp_jump_point;
+			}
+		}
+	}
+	else {  // 从上到下搜索
+		temp_jump_point = up_num;
+		for(int i = 0; i < down_num - up_num; i++) {
+			if(right_edge_line[up_num+i] - right_edge_line[up_num+i+5] <= -8 &&
+			   right_edge_line[up_num+i] - right_edge_line[up_num+i+6] <= -8 &&
+			   right_edge_line[up_num+i] - right_edge_line[up_num+i+7] <= -8 &&
+			   func_abs(right_edge_line[up_num+i] - right_edge_line[up_num+i+1]) <= 7 &&
+			   func_abs(right_edge_line[up_num+i] - right_edge_line[up_num+i+2]) <= 10 &&
+			   func_abs(right_edge_line[up_num+i] - right_edge_line[up_num+i+3]) <= 15)
+			{
+				temp_jump_point = (uint8)(up_num + i) - 3;
+				return temp_jump_point;
+			}
+		}
+	}
+	return 0;
+}
+
+/**
+ * @brief 两点间连线补线
+ * @param array_value 边线数组
+ * @param num0 起点行号
+ * @param num1 终点行号
+ */
+void image_connect_point(uint16 *array_value, uint8 num0, uint8 num1)
+{
+    float point_1 = (float)array_value[num0];
+    float point_2 = (float)array_value[num1];
+    float temp_slope = (point_2 - point_1) / (num0 - num1);
+
+    for (int i = 0; i < (num0 - num1); i++)
+    {
+        array_value[num0 - i] = (int8)(temp_slope * i) + array_value[num0];
+    }
+}
+
+/**
+ * @brief 单点延伸补线
+ * @param array_value 边线数组
+ * @param num 起点行号
+ * @param direction 延伸方向：1=向上（索引减小），0=向下（索引增大）
+ */
+void image_stretch_point(uint16 *array_value, uint8 num, uint8 direction)
+{
+	if((num + 5 >= IMAGE_H) || (num - 5 <= 0))
+		return;
+	
+	float temp_slope = 0;
+    float point_1 = (float)array_value[num];
+	
+	if(direction) {  // 向上延伸
+		float point_2 = (float)array_value[num+5];
+		temp_slope = (point_1 - point_2) / 5;
+		for (int i = 0; i < STRETCH_NUM && num-i >= 5; i++)
+		{
+			array_value[num - i] = func_limit_ab((int8)(temp_slope * i) + array_value[num], 0, IMAGE_W-1);
+		}
+	}
+	else {  // 向下延伸
+		float point_2 = (float)array_value[num-5];
+		temp_slope = (point_1 - point_2) / 5;
+		for (int i = 0; i < STRETCH_NUM && num+i <= IMAGE_H-1; i++)
+		{
+			array_value[num + i] = func_limit_ab((int8)(temp_slope * i) + array_value[num], 0, IMAGE_W-1);
+		}
+	}
+}
+
+/**
+ * @brief 十字识别主函数（MM32简化版本）
+ * @note 基于赛道宽度判断+跳变点检测+智能补线
+ */
+void image_cross_analysis(void)
+{
+	uint32 track_width = 0;
+	uint8 start_point = 0, end_point = 0;
+	
+	// 计算中间区域的赛道总宽度
+	for(int i = (IMAGE_H * 2 / 3); i > (IMAGE_H / 3); i--) {
+		track_width += (right_edge_line[i] - left_edge_line[i]);
+	}
+	
+	// 进入十字：赛道宽度大于阈值
+	if(!cross_flag && track_width > (IMAGE_W * (IMAGE_H * 4 / 15))) {
+		cross_flag = 1;
+	}
+	
+	// 十字状态处理
+	if(cross_flag == 1) {
+		// ========== 左边补线 ==========
+		start_point = 0;
+		end_point = 0;
+		start_point = image_find_left_jump_point(IMAGE_H - 5, IMAGE_H/4, 0);  // 从上往下找上拐点
+		end_point = image_find_left_jump_point(IMAGE_H - 5, IMAGE_H/3, 1);    // 从下往上找下拐点
+		
+		if(end_point && start_point) {
+			image_connect_point(left_edge_line, end_point, start_point);  // 两点连线
+		}
+		if(end_point && !start_point) {
+			image_stretch_point(left_edge_line, end_point, 1);  // 向上延伸
+		}
+		if(!end_point && start_point) {
+			image_stretch_point(left_edge_line, start_point, 0);  // 向下延伸
+		}
+		
+		// ========== 右边补线 ==========
+		start_point = 0;
+		end_point = 0;
+		start_point = image_find_right_jump_point(IMAGE_H - 5, IMAGE_H/4, 0);  // 从上往下找上拐点
+		end_point = image_find_right_jump_point(IMAGE_H - 5, IMAGE_H/3, 1);    // 从下往上找下拐点
+		
+		if(end_point && start_point) {
+			image_connect_point(right_edge_line, end_point, start_point);  // 两点连线
+		}
+		if(end_point && !start_point) {
+			image_stretch_point(right_edge_line, end_point, 1);  // 向上延伸
+		}
+		if(!end_point && start_point) {
+			image_stretch_point(right_edge_line, start_point, 0);  // 向下延伸
+		}
+		
+		// 退出十字：赛道宽度小于阈值
+		if(track_width < (IMAGE_W * (IMAGE_H * 1 / 5))) {
+			cross_flag = 0;
+		}
 	}
 }
 
