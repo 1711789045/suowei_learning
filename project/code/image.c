@@ -1689,11 +1689,13 @@ void image_stretch_point(uint16 *array_value, uint8 num, uint8 direction)
 /**
  * @brief 十字识别主函数（MM32简化版本）
  * @note 基于赛道宽度判断+跳变点检测+智能补线
+ *       优化：先找下拐点，动态限制上拐点搜索范围，避免两个拐点重合
  */
 void image_cross_analysis(void)
 {
 	uint32 track_width = 0;
-	uint8 start_point = 0, end_point = 0;
+	uint8 left_up = 0, left_down = 0;
+	uint8 right_up = 0, right_down = 0;
 	
 	// 计算中间区域的赛道总宽度
 	for(int i = (IMAGE_H * 2 / 3); i > (IMAGE_H / 3); i--) {
@@ -1708,43 +1710,87 @@ void image_cross_analysis(void)
 	// 十字状态处理
 	if(cross_flag == 1) {
 		// ========== 左边补线 ==========
-		start_point = 0;
-		end_point = 0;
-		start_point = image_find_left_jump_point(IMAGE_H - 5, 50, 0);  // 从上往下找上拐点（从第50行开始）
-		end_point = image_find_left_jump_point(IMAGE_H - 5, 50, 1);    // 从下往上找下拐点（到第50行结束）
+		// 步骤1：先找下拐点（从下往上搜索）
+		left_down = image_find_left_jump_point(IMAGE_H - 5, 50, 1);
 		
-		// ⭐ 将找到的角点存储到全局变量（供调试显示）
-		Left_Up_Find = start_point;    // 左上角点
-		Left_Down_Find = end_point;    // 左下角点
+		// 步骤2：再找上拐点（动态限制搜索范围在下拐点上方）
+		if(left_down > 60) {  // 下拐点有效且位置足够高
+			// 限制上拐点搜索到下拐点上方10行，避免找到同一个点
+			uint8 search_limit = left_down - 10;
+			left_up = image_find_left_jump_point(search_limit, 50, 0);
+		} else {
+			// 下拐点无效或太低，正常搜索上拐点
+			left_up = image_find_left_jump_point(IMAGE_H - 5, 50, 0);
+		}
 		
-		if(end_point && start_point) {
-			image_connect_point(left_edge_line, end_point, start_point);  // 两点连线
+		// 步骤3：后置检查，确保上下拐点有效且距离足够远
+		if(left_down > 0 && left_up > 0) {
+			// 确保下拐点在上拐点下方
+			if(left_down <= left_up) {
+				left_down = 0;
+			}
+			// 确保距离>10行
+			else if(left_down - left_up < 10) {
+				left_up = 0;
+				left_down = 0;
+			}
 		}
-		if(end_point && !start_point) {
-			image_stretch_point(left_edge_line, end_point, 1);  // 向上延伸
+		
+		// 步骤4：存储到全局变量（供调试显示）
+		Left_Up_Find = left_up;
+		Left_Down_Find = left_down;
+		
+		// 步骤5：补线逻辑
+		if(left_down && left_up) {
+			image_connect_point(left_edge_line, left_down, left_up);  // 两点连线
 		}
-		if(!end_point && start_point) {
-			image_stretch_point(left_edge_line, start_point, 0);  // 向下延伸
+		if(left_down && !left_up) {
+			image_stretch_point(left_edge_line, left_down, 1);  // 向上延伸
+		}
+		if(!left_down && left_up) {
+			image_stretch_point(left_edge_line, left_up, 0);  // 向下延伸
 		}
 		
 		// ========== 右边补线 ==========
-		start_point = 0;
-		end_point = 0;
-		start_point = image_find_right_jump_point(IMAGE_H - 5, 50, 0);  // 从上往下找上拐点（从第50行开始）
-		end_point = image_find_right_jump_point(IMAGE_H - 5, 50, 1);    // 从下往上找下拐点（到第50行结束）
+		// 步骤1：先找下拐点（从下往上搜索）
+		right_down = image_find_right_jump_point(IMAGE_H - 5, 50, 1);
 		
-		// ⭐ 将找到的角点存储到全局变量（供调试显示）
-		Right_Up_Find = start_point;   // 右上角点
-		Right_Down_Find = end_point;   // 右下角点
+		// 步骤2：再找上拐点（动态限制搜索范围在下拐点上方）
+		if(right_down > 60) {  // 下拐点有效且位置足够高
+			// 限制上拐点搜索到下拐点上方10行，避免找到同一个点
+			uint8 search_limit = right_down - 10;
+			right_up = image_find_right_jump_point(search_limit, 50, 0);
+		} else {
+			// 下拐点无效或太低，正常搜索上拐点
+			right_up = image_find_right_jump_point(IMAGE_H - 5, 50, 0);
+		}
 		
-		if(end_point && start_point) {
-			image_connect_point(right_edge_line, end_point, start_point);  // 两点连线
+		// 步骤3：后置检查，确保上下拐点有效且距离足够远
+		if(right_down > 0 && right_up > 0) {
+			// 确保下拐点在上拐点下方
+			if(right_down <= right_up) {
+				right_down = 0;
+			}
+			// 确保距离>10行
+			else if(right_down - right_up < 10) {
+				right_up = 0;
+				right_down = 0;
+			}
 		}
-		if(end_point && !start_point) {
-			image_stretch_point(right_edge_line, end_point, 1);  // 向上延伸
+		
+		// 步骤4：存储到全局变量（供调试显示）
+		Right_Up_Find = right_up;
+		Right_Down_Find = right_down;
+		
+		// 步骤5：补线逻辑
+		if(right_down && right_up) {
+			image_connect_point(right_edge_line, right_down, right_up);  // 两点连线
 		}
-		if(!end_point && start_point) {
-			image_stretch_point(right_edge_line, start_point, 0);  // 向下延伸
+		if(right_down && !right_up) {
+			image_stretch_point(right_edge_line, right_down, 1);  // 向上延伸
+		}
+		if(!right_down && right_up) {
+			image_stretch_point(right_edge_line, right_up, 0);  // 向下延伸
 		}
 		
 		// 退出十字：赛道宽度小于阈值
@@ -1753,7 +1799,7 @@ void image_cross_analysis(void)
 		}
 	}
 	else {
-		// ⭐ 非十字状态，清空角点变量
+		// 非十字状态，清空角点变量
 		Left_Up_Find = 0;
 		Left_Down_Find = 0;
 		Right_Up_Find = 0;
