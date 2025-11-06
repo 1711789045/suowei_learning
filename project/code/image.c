@@ -1713,6 +1713,10 @@ void image_cross_analysis(void)
 		start_point = image_find_left_jump_point(IMAGE_H - 5, 50, 0);  // 从上往下找上拐点（从第50行开始）
 		end_point = image_find_left_jump_point(IMAGE_H - 5, 50, 1);    // 从下往上找下拐点（到第50行结束）
 		
+		// ⭐ 将找到的角点存储到全局变量（供调试显示）
+		Left_Up_Find = start_point;    // 左上角点
+		Left_Down_Find = end_point;    // 左下角点
+		
 		if(end_point && start_point) {
 			image_connect_point(left_edge_line, end_point, start_point);  // 两点连线
 		}
@@ -1729,6 +1733,10 @@ void image_cross_analysis(void)
 		start_point = image_find_right_jump_point(IMAGE_H - 5, 50, 0);  // 从上往下找上拐点（从第50行开始）
 		end_point = image_find_right_jump_point(IMAGE_H - 5, 50, 1);    // 从下往上找下拐点（到第50行结束）
 		
+		// ⭐ 将找到的角点存储到全局变量（供调试显示）
+		Right_Up_Find = start_point;   // 右上角点
+		Right_Down_Find = end_point;   // 右下角点
+		
 		if(end_point && start_point) {
 			image_connect_point(right_edge_line, end_point, start_point);  // 两点连线
 		}
@@ -1743,6 +1751,13 @@ void image_cross_analysis(void)
 		if(track_width < (IMAGE_W * (IMAGE_H * 1 / 5))) {
 			cross_flag = 0;
 		}
+	}
+	else {
+		// ⭐ 非十字状态，清空角点变量
+		Left_Up_Find = 0;
+		Left_Down_Find = 0;
+		Right_Up_Find = 0;
+		Right_Down_Find = 0;
 	}
 }
 
