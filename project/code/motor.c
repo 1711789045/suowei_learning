@@ -182,13 +182,13 @@ void motor_process(void)
             // 偏右(mid_error<0) → 需要左转 → 右轮加速，左轮减速
             if (mid_error > 0)  // 偏左，需要右转
             {
-                target_left  = basic_speed + (int16)(direction_output * outer_wheel_ratio);  // 左轮是外轮，加速
-                target_right = basic_speed - (int16)(direction_output * inner_wheel_ratio);  // 右轮是内轮，减速
+                target_left  = current_running_speed + (int16)(direction_output * outer_wheel_ratio);  // 左轮是外轮，加速
+                target_right = current_running_speed - (int16)(direction_output * inner_wheel_ratio);  // 右轮是内轮，减速
             }
             else  // 偏右或居中，需要左转或直行
             {
-                target_left  = basic_speed + (int16)(direction_output * inner_wheel_ratio);  // 左轮是内轮
-                target_right = basic_speed - (int16)(direction_output * outer_wheel_ratio);  // 右轮是外轮
+                target_left  = current_running_speed + (int16)(direction_output * inner_wheel_ratio);  // 左轮是内轮
+                target_right = current_running_speed - (int16)(direction_output * outer_wheel_ratio);  // 右轮是外轮
             }
             
             // 负值限制：全程限制为0
@@ -206,8 +206,8 @@ void motor_process(void)
     else if (speed_debug_enable)
     {
         // 速度环调试：直接设置目标速度
-        target_left = basic_speed;
-        target_right = basic_speed;
+        target_left = current_running_speed;
+        target_right = current_running_speed;
     }
     
     // ==================== 速度环控制 (5ms周期) ====================

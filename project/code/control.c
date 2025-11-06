@@ -26,6 +26,7 @@ uint8 car_running = 0;              // 小车运行状态（0=停止，1=运行）
 uint8 stop_flag = 0;                // 停车标志位
 uint8 stop_enable = 1;              // 停车检测开关（0=关闭，1=开启，默认开启）
 volatile uint32 system_time_ms = 0; // 系统运行时间(ms)，在PIT中断中递增
+int16 current_running_speed = 0;    // 当前运行速度（发车状态机控制，不修改basic_speed）
 
 // ==================== 发车状态机变量 ====================
 static start_state_t start_state = START_IDLE;   // 当前状态
@@ -97,11 +98,11 @@ void start_car(void)
     
     // ========== 启动状态机发车（非阻塞） ==========
     
-    // 1. 保存预设的basic_speed
+    // 1. 保存预设的basic_speed（不修改basic_speed，保护用户参数）
     target_speed_saved = basic_speed;
     
-    // 2. 将basic_speed置为0（准备原地调整）
-    basic_speed = 0;
+    // 2. 将运行速度置为0（准备原地调整）
+    current_running_speed = 0;
     
     // 3. 重置电机控制系统所有状态
     motor_reset();
@@ -143,8 +144,8 @@ void start_car_process(void)
     // 状态机（基于精确的毫秒计时）
     switch (start_state)
     {
-        case START_ALIGN:  // 原地调整状态（basic_speed=0）
-            basic_speed = 0;
+        case START_ALIGN:  // 原地调整状态（current_running_speed=0）
+            current_running_speed = 0;  // ?使用新变量，不修改basic_speed
             if (elapsed_time >= 1000)  // 精确1秒
             {
                 start_state = START_ACCEL;
@@ -162,7 +163,7 @@ void start_car_process(void)
             if (accel_ratio > 1.0f)
                 accel_ratio = 1.0f;
             
-            basic_speed = (int16)(target_speed_saved * accel_ratio);
+            current_running_speed = (int16)(target_speed_saved * accel_ratio);  // ?使用新变量
             
             if (elapsed_time >= 1000)  // 加速完成（1秒）
             {
@@ -172,7 +173,7 @@ void start_car_process(void)
             break;
             
         case START_RUNNING:  // 正常运行状态（100%速度）
-            basic_speed = target_speed_saved;
+            current_running_speed = target_speed_saved;  // ?使用新变量
             start_state = START_IDLE;  // 完成，回到空闲状态
             break;
             

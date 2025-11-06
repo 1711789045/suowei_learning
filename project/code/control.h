@@ -24,6 +24,7 @@ extern uint8 car_running;           // 小车运行状态（0=停止，1=运行）
 extern uint8 stop_flag;             // 停车标志位
 extern uint8 stop_enable;           // 停车检测开关（0=关闭，1=开启）
 extern volatile uint32 system_time_ms;  // 系统运行时间(ms)，在PIT中断中递增
+extern int16 current_running_speed; // 当前运行速度（发车状态机控制，不修改basic_speed）
 
 // ==================== 发车状态机 ====================
 typedef enum
