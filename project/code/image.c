@@ -813,6 +813,37 @@ void image_calculate_prospect(const uint8 image[][IMAGE_W]){
 }
 
 /**
+ * @brief 在角点周围画圆圈（辅助调试）
+ * @param x 角点X坐标
+ * @param y 角点Y坐标
+ * @param radius 圆圈半径（像素）
+ * @param color 颜色
+ * @param display_width 显示宽度（防止越界）
+ * @param display_height 显示高度（防止越界）
+ * @return 无
+ */
+static void draw_corner_circle(uint16 x, uint16 y, uint8 radius, uint16 color, uint16 display_width, uint16 display_height) {
+    // 使用简化的圆形绘制（8方向画点）
+    for(int8 dx = -radius; dx <= radius; dx++) {
+        for(int8 dy = -radius; dy <= radius; dy++) {
+            // 计算距离平方，只画圆周上的点（不填充内部）
+            int dist_sq = dx*dx + dy*dy;
+            
+            // 圆周条件：距离在 (radius-1)² 到 (radius+1)² 之间
+            if(dist_sq >= (radius-1)*(radius-1) && dist_sq <= (radius+1)*(radius+1)) {
+                int16 px = (int16)x + dx;
+                int16 py = (int16)y + dy;
+                
+                // 边界检查
+                if(px >= 0 && px < display_width && py >= 0 && py < display_height) {
+                    ips114_draw_point((uint16)px, (uint16)py, color);
+                }
+            }
+        }
+    }
+}
+
+/**
  * @brief 显示边线和调试信息（适配IPS114）
  * @param image 图像数组
  * @param display_width 显示宽度
@@ -839,6 +870,39 @@ void image_display_edge_line(const uint8 image[][IMAGE_W], uint16 display_width,
 
         if(mid_line[i] < display_width && i < display_height) {
             ips114_draw_point((uint16)mid_line[i], i, RGB565_GREEN);
+        }
+    }
+    
+    // ==================== 十字角点调试显示 ====================
+    // 定义橙色（RGB565格式：R5G6B5，橙色≈255,165,0）
+    #define RGB565_ORANGE  0xFD20  // RGB(255, 165, 0)
+    
+    // 显示十字角点（橙色圆圈，半径3像素）
+    if(Left_Down_Find > 0 && Left_Down_Find < IMAGE_H) {
+        uint16 x = left_edge_line[Left_Down_Find];
+        if(x < display_width) {
+            draw_corner_circle(x, (uint16)Left_Down_Find, 3, RGB565_ORANGE, display_width, display_height);
+        }
+    }
+    
+    if(Left_Up_Find > 0 && Left_Up_Find < IMAGE_H) {
+        uint16 x = left_edge_line[Left_Up_Find];
+        if(x < display_width) {
+            draw_corner_circle(x, (uint16)Left_Up_Find, 3, RGB565_ORANGE, display_width, display_height);
+        }
+    }
+    
+    if(Right_Down_Find > 0 && Right_Down_Find < IMAGE_H) {
+        uint16 x = right_edge_line[Right_Down_Find];
+        if(x < display_width) {
+            draw_corner_circle(x, (uint16)Right_Down_Find, 3, RGB565_ORANGE, display_width, display_height);
+        }
+    }
+    
+    if(Right_Up_Find > 0 && Right_Up_Find < IMAGE_H) {
+        uint16 x = right_edge_line[Right_Up_Find];
+        if(x < display_width) {
+            draw_corner_circle(x, (uint16)Right_Up_Find, 3, RGB565_ORANGE, display_width, display_height);
         }
     }
 
