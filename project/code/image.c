@@ -873,6 +873,74 @@ void image_get_left_err(void){
 	}
 }
 
+/**
+ * @brief 检测图像是否出界
+ * @return 出界标志（0=未出界，1=出界）
+ * @note 使用动态白点参考值+对比度计算判断车前是否有赛道
+ *       白点采样：从reference_col列底部往上取5个点
+ *       检测区域：底部2行，中央40列
+ */
+uint8 image_out_of_bounds(void)
+{
+	int white_ref_value = 0;
+	int sample_count = 0;
+	int dark_count = 0;
+	int total_count = 0;
+	
+	// 从参考列（reference_col）从底部往上取5个点作为白点参考
+	for (int i = IMAGE_H - 1; i >= IMAGE_H - 5 && i >= 0; i--)
+	{
+		white_ref_value += user_image[i][reference_col];
+		sample_count++;
+	}
+	
+	// 计算平均值
+	if (sample_count > 0)
+		white_ref_value = white_ref_value / sample_count;
+	else
+		return 0;  // 采样失败，不判定为出界
+	
+	// 检测车前最底部中央区域（底部2行，中央40列）
+	for (int i = 0; i < 2; i++)
+	{
+		for (int j = 0; j < 40; j++)
+		{
+			int row = IMAGE_H - 1 - i;
+			int col = IMAGE_W / 2 - 20 + j;
+			
+			// 边界检查
+			if (row < 0 || row >= IMAGE_H || col < 0 || col >= IMAGE_W)
+				continue;
+			
+			int pixel_value = user_image[row][col];
+			
+			// 计算对比度（差比和公式）
+			int contrast = 0;
+			if (white_ref_value + pixel_value != 0)
+			{
+				contrast = (white_ref_value - pixel_value) * 200 / (white_ref_value + pixel_value);
+			}
+			
+			// 判定黑点（对比度大于阈值）
+			if (contrast > reference_contrast_ratio)
+			{
+				dark_count++;
+			}
+			total_count++;
+		}
+	}
+	
+	// 黑点占比超过70%判定为出界
+	// total_count = 2行 × 40列 = 80像素
+	// 70%阈值 = 56像素
+	if (dark_count >= (total_count * 7 / 10))
+	{
+		return 1;
+	}
+	
+	return 0;
+}
+
 // ==================== 老十字补线辅助函数（状态机版本，cross_enable=2时使用）====================
 
 /**

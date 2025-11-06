@@ -24,6 +24,7 @@
 // ==================== 全局变量 ====================
 uint8 car_running = 0;              // 小车运行状态（0=停止，1=运行）
 uint8 stop_flag = 0;                // 停车标志位
+uint8 stop_enable = 1;              // 停车检测开关（0=关闭，1=开启，默认开启）
 volatile uint32 system_time_ms = 0; // 系统运行时间(ms)，在PIT中断中递增
 
 // ==================== 发车状态机变量 ====================
@@ -216,25 +217,40 @@ void stop_car(void)
  * @brief  停车检测（主循环调用）
  * @param  无
  * @return 无
- * @note   检测prospect值，小于5时触发停车
+ * @note   使用图像出界检测+连续性判断，避免误触发
  */
 void stop_detection(void)
 {
+    static uint8 out_of_bounds_count = 0;  // 出界计数器
+    const uint8 OUT_OF_BOUNDS_THRESHOLD = 5;  // 连续检测阈值（5帧≈40ms）
+    
     // 只在运行状态下检测
-    if(car_running)
+    if(car_running && stop_enable)  // stop_enable开关
     {
-        // 检测前瞻值
-        if(prospect < 5)
+        // 使用图像像素检测法
+        if(image_out_of_bounds())
         {
-            // 设置停车标志
-            stop_flag = 1;
+            out_of_bounds_count++;
             
-            // 触发停车
-            stop_car();
-            
-            // 清空标志
-            stop_flag = 0;
+            // 连续N帧检测到出界，才触发停车
+            if(out_of_bounds_count >= OUT_OF_BOUNDS_THRESHOLD)
+            {
+                stop_flag = 1;
+                stop_car();
+                stop_flag = 0;
+                out_of_bounds_count = 0;
+            }
         }
+        else
+        {
+            // 恢复正常，清空计数器
+            out_of_bounds_count = 0;
+        }
+    }
+    else
+    {
+        // 非运行状态，清空计数器
+        out_of_bounds_count = 0;
     }
 }
 

@@ -149,6 +149,9 @@ float calculate_curvature(void);                  // 计算赛道曲率
 void adjust_weight_by_curvature(float curvature); // 根据曲率调整权重
 void dynamic_weight_adjust(void);                 // 动态前瞻权重主函数
 
+// 出界检测函数
+uint8 image_out_of_bounds(void);                  // 图像出界检测
+
 // 老十字识别函数（状态机版本，cross_enable=2时使用）
 void Find_Down_Point(int16 start, int16 end);      // 查找下拐点
 void Find_Up_Point(int16 start, int16 end);        // 查找上拐点

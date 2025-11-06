@@ -1068,7 +1068,7 @@ void menu_example_create(void)
     direction_kp2_unit = menu_create_param("Dir Kp2", &direction_kp2, CONFIG_TYPE_FLOAT, 0.01f, 2, 3);
     direction_kp_unit = menu_create_param("Dir Kp", &direction_kp, CONFIG_TYPE_FLOAT, 0.1f, 2, 2);
     direction_ki_unit = menu_create_param("Dir Ki", &direction_ki, CONFIG_TYPE_FLOAT, 0.01f, 2, 3);
-    direction_kd_img_unit = menu_create_param("Dir Kd_img", &direction_kd_img, CONFIG_TYPE_FLOAT, 0.01f, 2, 3);
+    direction_kd_img_unit = menu_create_param("Dir Kd_img", &direction_kd_img, CONFIG_TYPE_FLOAT, 0.1f, 2, 3);
     direction_kd_g_unit = menu_create_param("Dir Kd_g", &direction_kd_g, CONFIG_TYPE_FLOAT, 0.01f, 2, 3);
     inner_ratio_unit = menu_create_param("Inner Ratio", &inner_wheel_ratio, CONFIG_TYPE_FLOAT, 0.1f, 2, 2);
     outer_ratio_unit = menu_create_param("Outer Ratio", &outer_wheel_ratio, CONFIG_TYPE_FLOAT, 0.1f, 2, 2);
@@ -1153,12 +1153,18 @@ void menu_example_create(void)
     config_register_item("mid_weight_select", &mid_weight_select, CONFIG_TYPE_UINT16, &mid_weight_select_default, "Weight Select");
     menu_auto_link_child(mid_weight_select_unit, image_page);
     
-    // cross_enable: 十字识别开关（0=关闭，1=开启）
+    // cross_enable: 十字识别开关（0=关闭，1=简单版，2=复杂版）
     static uint16 cross_enable_default = 0;
     static menu_unit_t* cross_enable_unit = NULL;
     cross_enable_unit = menu_create_param("Cross Enable", &cross_enable, CONFIG_TYPE_UINT16, 1.0f, 1, 0);
     config_register_item("cross_enable", &cross_enable, CONFIG_TYPE_UINT16, &cross_enable_default, "Cross Enable");
     menu_auto_link_child(cross_enable_unit, image_page);
+    
+    // stop_enable: 停车检测开关（0=关闭，1=开启）
+    static uint8 stop_enable_default = 1;
+    static menu_unit_t* stop_enable_unit = NULL;
+    stop_enable_unit = menu_create_param("Stop Enable", &stop_enable, CONFIG_TYPE_UINT8, 1.0f, 1, 0);
+    menu_auto_link_child(stop_enable_unit, image_page);
 
     // ========== 右轮参数注册（放在最后，作为新增配置项）==========
     // 前11项保持与旧Flash兼容，后3项为新增
