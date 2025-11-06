@@ -294,6 +294,12 @@ static void menu_navigate_up(void)
             current_unit = current_unit->down;
     }
 
+    // ⭐ 如果选中了basic_speed参数，同步真实值（浏览时也显示实时值）
+    if (current_unit == basic_speed_menu_unit)
+    {
+        temp_basic_speed = basic_speed;
+    }
+
     // 刷新颜色：旧位置恢复白色，新位置变绿色
     menu_display_item(old_unit, old_line, 0, 0);        // 旧位置恢复为未选中状态（白色）
     menu_display_item(current_unit, current_line, 1, 0); // 新位置显示为选中状态（绿色）
@@ -344,6 +350,12 @@ static void menu_navigate_down(void)
     {
         if (current_unit->down != NULL)
             current_unit = current_unit->down;
+    }
+
+    // ⭐ 如果选中了basic_speed参数，同步真实值（浏览时也显示实时值）
+    if (current_unit == basic_speed_menu_unit)
+    {
+        temp_basic_speed = basic_speed;
     }
 
     // 刷新颜色：旧位置恢复白色，新位置变绿色
@@ -1245,6 +1257,10 @@ void menu_example_create(void)
  */
 void menu_example_enter(void)
 {
+    // 进入菜单时同步basic_speed → temp_basic_speed（反向同步）
+    // 解决问题：发车状态机会修改basic_speed，导致菜单显示不一致
+    temp_basic_speed = basic_speed;
+    
     // 进入一级菜单，从car_start开始
     if (menu_root != NULL && menu_root->down != NULL)
     {
