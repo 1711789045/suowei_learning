@@ -334,8 +334,9 @@ void search_reference_col(const uint8 image[][IMAGE_W]){
 	}
 
 	// 从右往左搜索最长白列（remote_distance最小的列）
-	reference_col = IMAGE_W - 1;  // 初始化为最右边
-	for(col = IMAGE_W - 1; col >= 0; col -= CONTRASTOFFSET){
+	reference_col = 0;  // 初始化为0（确保是被计算过的列）
+	for(col = IMAGE_W - 1 - (IMAGE_W - 1) % CONTRASTOFFSET; col >= 0; col -= CONTRASTOFFSET){
+		// col起点对齐到CONTRASTOFFSET的倍数，确保搜索的列都是被计算过的列
 		if(remote_distance[reference_col] > remote_distance[col])
 			reference_col = col;
 	}
