@@ -42,6 +42,9 @@
 #define IMAGE_W            MT9V03X_W       // 188（MT9V03X摄像头宽度）
 #define IMAGE_H            MT9V03X_H       // 120（MT9V03X摄像头高度）
 
+// ==================== 十字识别配置 ====================
+#define CROSS_TOP_LIMIT    50              // 十字识别上方限制行（避免上端杂物干扰，可调整）
+
 // ==================== 图像处理配置参数声明 ====================
 // 这些参数在 image.c 中定义，可被 config_flash 等模块引用
 extern uint8 reference_row;        // 参考点统计行数

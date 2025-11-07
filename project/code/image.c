@@ -1029,8 +1029,8 @@ void Find_Down_Point(int16 start, int16 end)
 		start = IMAGE_H - 1 - 3;
 	if(end >= IMAGE_H - 5)
 		end = IMAGE_H - 5;
-	if(end <= 50)  // 修改：上端限制在第50行，避免上端杂物干扰
-		end = 50;
+	if(end <= CROSS_TOP_LIMIT)  // 上端限制（避免上端杂物干扰）
+		end = CROSS_TOP_LIMIT;
 
 	for(i = start; i >= end; i--)
 	{
@@ -1094,10 +1094,10 @@ void Find_Up_Point(int16 start, int16 end)
 	// start<end 由上往下
 	if(end >= IMAGE_H - 5)
 		end = IMAGE_H - 5;
-	if(end <= 50)  // 修改：上端限制在第50行，避免上端杂物干扰
-		end = 50;
-	if(start <= 50)  // 修改：起始行也限制在第50行
-		start = 50;
+	if(end <= CROSS_TOP_LIMIT)  // 上端限制（避免上端杂物干扰）
+		end = CROSS_TOP_LIMIT;
+	if(start <= CROSS_TOP_LIMIT)  // 起始行也限制
+		start = CROSS_TOP_LIMIT;
 	if(start < stop_search_row + 5) {
 		start = stop_search_row + 5;
 	}
@@ -1188,8 +1188,8 @@ int16 continuity_left(uint8 start, uint8 end)
 
 	if(start >= IMAGE_H - 2)  // 数组越界保护
 		start = IMAGE_H - 2;
-	if(end <= 50) {  // 修改：上端限制在第50行
-		end = 50;
+	if(end <= CROSS_TOP_LIMIT) {  // 上端限制
+		end = CROSS_TOP_LIMIT;
 	}
 	if(start < end) {
 		uint8 t = start;
@@ -1383,8 +1383,8 @@ void image_cross_analysis_OLD(void)
 	memcpy(leftfollowline, left_edge_line, sizeof(left_edge_line));
 	memcpy(rightfollowline, right_edge_line, sizeof(right_edge_line));
 
-	// 确保搜索截止行不低于第50行
-	uint8 safe_stop_row = (stop_search_row < 50) ? 50 : stop_search_row;
+	// 确保搜索截止行不低于CROSS_TOP_LIMIT
+	uint8 safe_stop_row = (stop_search_row < CROSS_TOP_LIMIT) ? CROSS_TOP_LIMIT : stop_search_row;
 
 	// 查找上下半段边界点（从第50行开始）
 	Find_Up_Point(IMAGE_H - 1, safe_stop_row);      // 查找上半段边界点（左上、右上）
@@ -1406,7 +1406,7 @@ void image_cross_analysis_OLD(void)
 	// ==================== 直道状态：检测是否进入十字 ====================
 	if(cross_status == CROSS_STRAIGHT) {
 		// 只有在截止行较近时才检测十字（使用safe_stop_row）
-		if(safe_stop_row < 70) {  // 修改：由于起始行是50，阈值相应调整
+		if(safe_stop_row < CROSS_TOP_LIMIT + 20) {  // 阈值：CROSS_TOP_LIMIT+20
 			// 情况1：正入十字 - 左右不连续点都找到，且左右上拐点都找到
 			if(continuity_pointLeft[0] != 0 && continuity_pointRight[0] != 0 &&
 			   Right_Up_Find != 0 && Left_Up_Find != 0 &&
@@ -1757,16 +1757,16 @@ void image_cross_analysis(void)
 	if(cross_flag == 1) {
 		// ========== 左边补线 ==========
 		// 步骤1：先找下拐点（从下往上搜索）
-		left_down = image_find_left_jump_point(IMAGE_H - 5, 50, 1);
+		left_down = image_find_left_jump_point(IMAGE_H - 5, CROSS_TOP_LIMIT, 1);
 		
 		// 步骤2：再找上拐点（动态限制搜索范围在下拐点上方）
-		if(left_down > 60) {  // 下拐点有效且位置足够高
+		if(left_down > CROSS_TOP_LIMIT + 10) {  // 下拐点有效且位置足够高
 			// 限制上拐点搜索到下拐点上方10行，避免找到同一个点
 			uint8 search_limit = left_down - 10;
-			left_up = image_find_left_jump_point(search_limit, 50, 0);
+			left_up = image_find_left_jump_point(search_limit, CROSS_TOP_LIMIT, 0);
 		} else {
 			// 下拐点无效或太低，正常搜索上拐点
-			left_up = image_find_left_jump_point(IMAGE_H - 5, 50, 0);
+			left_up = image_find_left_jump_point(IMAGE_H - 5, CROSS_TOP_LIMIT, 0);
 		}
 		
 		// 步骤3：后置检查，确保上下拐点有效且距离足够远
@@ -1799,16 +1799,16 @@ void image_cross_analysis(void)
 		
 		// ========== 右边补线 ==========
 		// 步骤1：先找下拐点（从下往上搜索）
-		right_down = image_find_right_jump_point(IMAGE_H - 5, 50, 1);
+		right_down = image_find_right_jump_point(IMAGE_H - 5, CROSS_TOP_LIMIT, 1);
 		
 		// 步骤2：再找上拐点（动态限制搜索范围在下拐点上方）
-		if(right_down > 60) {  // 下拐点有效且位置足够高
+		if(right_down > CROSS_TOP_LIMIT + 10) {  // 下拐点有效且位置足够高
 			// 限制上拐点搜索到下拐点上方10行，避免找到同一个点
 			uint8 search_limit = right_down - 10;
-			right_up = image_find_right_jump_point(search_limit, 50, 0);
+			right_up = image_find_right_jump_point(search_limit, CROSS_TOP_LIMIT, 0);
 		} else {
 			// 下拐点无效或太低，正常搜索上拐点
-			right_up = image_find_right_jump_point(IMAGE_H - 5, 50, 0);
+			right_up = image_find_right_jump_point(IMAGE_H - 5, CROSS_TOP_LIMIT, 0);
 		}
 		
 		// 步骤3：后置检查，确保上下拐点有效且距离足够远
