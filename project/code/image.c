@@ -51,7 +51,7 @@ uint16 circle_4_time = 25;      // 环岛状态四延时时间，单位10ms
 uint16 circle_5_time = 25;      // 环岛状态五延时时间，单位10ms
 uint8 stop_analyse_line = 40;   // 停止线分析行（从底部数）
 uint8 stop_threshold = 30;      // 停止线检测阈值
-uint8 stretch_num = 80;         // 边线延长数
+uint8 stretch_num = 60;         // 边线延长数
 uint8 mid_calc_center_row = 90; // 中线计算中心行（从底部数）
 uint16 mid_weight_select = 1;   // 权重数组选择（1-5，默认1）
 uint16 cross_enable = 0;        // 十字识别开关（默认关闭）
@@ -1669,25 +1669,48 @@ void image_stretch_point(uint16 *array_value, uint8 num, uint8 direction, uint8 
 	float temp_slope = 0;
     float point_1 = (float)array_value[num];
 	
-	if(direction) {  // 向上延伸（补拐点上方的远处）
-		// 近端多点采样：从拐点上方取3个参考点（-2, -3, -4行）
+	if(direction) {  // 向上延伸（从下拐点向上补线，下方边线清晰可靠）
+		// 近端多点采样：从拐点下方取3个参考点（+2, +3, +4行）
+		float slope_sum = 0;
+		int count = 0;
+		
+		for(int j = 2; j <= 4 && num+j < IMAGE_H; j++) {
+			float ref_point = (float)array_value[num+j];
+			float slope = (point_1 - ref_point) / j;
+			slope_sum += slope;
+			count++;
+		}
+		
+		// 使用平均斜率
+		if(count > 0) {
+			temp_slope = slope_sum / count;
+		}
+		
+		// 向上延伸
+		for (int i = 0; i < STRETCH_NUM && num-i >= 5; i++)
+		{
+			array_value[num - i] = func_limit_ab((int)(temp_slope * i) + array_value[num], 0, IMAGE_W-1);
+		}
+	}
+	else {  // 向下延伸（从上拐点向底部延伸）
+		// 近端多点采样：从拐点下方取3个参考点（+2, +3, +4行）
 		float slope_sum = 0;
 		int valid_slope_count = 0;
 		
-		for(int j = 2; j <= 4 && num-j >= 0; j++) {
-			float ref_point = (float)array_value[num-j];
-			float slope = (point_1 - ref_point) / j;
+		for(int j = 2; j <= 4 && num+j < IMAGE_H; j++) {
+			float ref_point = (float)array_value[num+j];
+			float slope = (point_1 - ref_point) / (-j);  // 注意：向下时j为正，斜率计算要取负
 			
 			// 斜率方向检查（剔除异常斜率）
 			uint8 slope_valid = 0;
 			if(is_left) {
-				// 左边线：slope应该在[-2, -0.4]范围内（向左延伸，但不能太陡或太平）
-				if(slope >= -2.0f && slope <= -0.4f) {
+				// 左边线：slope应该在[-2, -0.2]范围内（向左延伸，但不能太陡或太平）
+				if(slope >= -2.0f && slope <= -0.2f) {
 					slope_valid = 1;
 				}
 			} else {
-				// 右边线：slope应该在[0.4, 2]范围内（向右延伸，但不能太陡或太平）
-				if(slope >= 0.4f && slope <= 2.0f) {
+				// 右边线：slope应该在[0.2, 2]范围内（向右延伸，但不能太陡或太平）
+				if(slope >= 0.2f && slope <= 2.0f) {
 					slope_valid = 1;
 				}
 			}
@@ -1704,9 +1727,9 @@ void image_stretch_point(uint16 *array_value, uint8 num, uint8 direction, uint8 
 			temp_slope = slope_sum / valid_slope_count;
 			
 			// 正常延伸
-			for (int i = 0; i < STRETCH_NUM && num-i >= 5; i++)
+			for (int i = 0; i < STRETCH_NUM && num+i <= IMAGE_H-1; i++)
 			{
-				array_value[num - i] = func_limit_ab((int)(temp_slope * i) + array_value[num], 0, IMAGE_W-1);
+				array_value[num + i] = func_limit_ab((int)(temp_slope * i) + array_value[num], 0, IMAGE_W-1);
 			}
 		}
 		else {
@@ -1720,14 +1743,6 @@ void image_stretch_point(uint16 *array_value, uint8 num, uint8 direction, uint8 
 				image_connect_point(array_value, num, IMAGE_H - 1);
 				array_value[IMAGE_H - 1] = IMAGE_W - 1;
 			}
-		}
-	}
-	else {  // 向下延伸（保持不变，近端图像清晰干扰少）
-		float point_2 = (float)array_value[num-5];
-		temp_slope = (point_1 - point_2) / 5;
-		for (int i = 0; i < STRETCH_NUM && num+i <= IMAGE_H-1; i++)
-		{
-			array_value[num + i] = func_limit_ab((int)(temp_slope * i) + array_value[num], 0, IMAGE_W-1);
 		}
 	}
 }
