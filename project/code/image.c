@@ -84,13 +84,13 @@ uint8 mid_weight_1[IMAGE_H] = {
 	1 ,1 ,1 ,1 ,1 ,1 ,1 ,1 ,1 ,1 ,
 	1 ,1 ,1 ,1 ,1 ,1 ,1 ,1 ,1 ,1 ,
 	1 ,1 ,1 ,1 ,1 ,1 ,1 ,1 ,1 ,1 ,
+	1 ,1 ,1 ,1 ,1 ,1 ,1 ,1 ,1 ,1 ,
+	1 ,1 ,1 ,1 ,1 ,1 ,1 ,1 ,1 ,1 ,
 	6 ,6 ,6 ,6 ,6 ,6 ,6 ,6 ,6 ,6 ,
 	7 ,8 ,9 ,10,11,12,13,14,15,16,
 	17,18,19,20,20,20,20,19,18,17,
 	16,15,14,13,12,11,10,9 ,8 ,7 ,
-	6 ,6 ,6 ,6 ,6 ,6 ,6 ,6 ,6 ,6 ,
-	1 ,1 ,1 ,1 ,1 ,1 ,1 ,1 ,1 ,1 ,
-	1 ,1 ,1 ,1 ,1 ,1 ,1 ,1 ,1 ,1
+	6 ,6 ,6 ,6 ,6 ,6 ,6 ,6 ,6 ,6 
 };
 
 // 预设权重数组2：峰值在第50-70行（稍近）
@@ -99,14 +99,14 @@ uint8 mid_weight_2[IMAGE_H] = {
 	1 ,1 ,1 ,1 ,1 ,1 ,1 ,1 ,1 ,1 ,
 	1 ,1 ,1 ,1 ,1 ,1 ,1 ,1 ,1 ,1 ,
 	1 ,1 ,1 ,1 ,1 ,1 ,1 ,1 ,1 ,1 ,
+	1 ,1 ,1 ,1 ,1 ,1 ,1 ,1 ,1 ,1 ,
+	1 ,1 ,1 ,1 ,1 ,1 ,1 ,1 ,1 ,1 ,
 	6 ,6 ,6 ,6 ,6 ,6 ,6 ,6 ,6 ,6 ,
 	7 ,8 ,9 ,10,11,12,13,14,15,16,
 	17,18,19,20,20,20,20,19,18,17,
 	16,15,14,13,12,11,10,9 ,8 ,7 ,
 	6 ,6 ,6 ,6 ,6 ,6 ,6 ,6 ,6 ,6 ,
-	1 ,1 ,1 ,1 ,1 ,1 ,1 ,1 ,1 ,1 ,
-	1 ,1 ,1 ,1 ,1 ,1 ,1 ,1 ,1 ,1 ,
-	1 ,1 ,1 ,1 ,1 ,1 ,1 ,1 ,1 ,1
+	1 ,1 ,1 ,1 ,1 ,1 ,1 ,1 ,1 ,1 
 };
 
 // 预设权重数组3：峰值在第40-60行（中间）
@@ -114,13 +114,13 @@ uint8 mid_weight_3[IMAGE_H] = {
 	1 ,1 ,1 ,1 ,1 ,1 ,1 ,1 ,1 ,1 ,
 	1 ,1 ,1 ,1 ,1 ,1 ,1 ,1 ,1 ,1 ,
 	1 ,1 ,1 ,1 ,1 ,1 ,1 ,1 ,1 ,1 ,
+	1 ,1 ,1 ,1 ,1 ,1 ,1 ,1 ,1 ,1 ,
+	1 ,1 ,1 ,1 ,1 ,1 ,1 ,1 ,1 ,1 ,
 	6 ,6 ,6 ,6 ,6 ,6 ,6 ,6 ,6 ,6 ,
 	7 ,8 ,9 ,10,11,12,13,14,15,16,
 	17,18,19,20,20,20,20,19,18,17,
 	16,15,14,13,12,11,10,9 ,8 ,7 ,
 	6 ,6 ,6 ,6 ,6 ,6 ,6 ,6 ,6 ,6 ,
-	1 ,1 ,1 ,1 ,1 ,1 ,1 ,1 ,1 ,1 ,
-	1 ,1 ,1 ,1 ,1 ,1 ,1 ,1 ,1 ,1 ,
 	1 ,1 ,1 ,1 ,1 ,1 ,1 ,1 ,1 ,1 ,
 	1 ,1 ,1 ,1 ,1 ,1 ,1 ,1 ,1 ,1
 };
@@ -129,13 +129,13 @@ uint8 mid_weight_3[IMAGE_H] = {
 uint8 mid_weight_4[IMAGE_H] = {
 	1 ,1 ,1 ,1 ,1 ,1 ,1 ,1 ,1 ,1 ,
 	1 ,1 ,1 ,1 ,1 ,1 ,1 ,1 ,1 ,1 ,
+	1 ,1 ,1 ,1 ,1 ,1 ,1 ,1 ,1 ,1 ,
+	1 ,1 ,1 ,1 ,1 ,1 ,1 ,1 ,1 ,1 ,
 	6 ,6 ,6 ,6 ,6 ,6 ,6 ,6 ,6 ,6 ,
 	7 ,8 ,9 ,10,11,12,13,14,15,16,
 	17,18,19,20,20,20,20,19,18,17,
 	16,15,14,13,12,11,10,9 ,8 ,7 ,
 	6 ,6 ,6 ,6 ,6 ,6 ,6 ,6 ,6 ,6 ,
-	1 ,1 ,1 ,1 ,1 ,1 ,1 ,1 ,1 ,1 ,
-	1 ,1 ,1 ,1 ,1 ,1 ,1 ,1 ,1 ,1 ,
 	1 ,1 ,1 ,1 ,1 ,1 ,1 ,1 ,1 ,1 ,
 	1 ,1 ,1 ,1 ,1 ,1 ,1 ,1 ,1 ,1 ,
 	1 ,1 ,1 ,1 ,1 ,1 ,1 ,1 ,1 ,1
@@ -144,6 +144,8 @@ uint8 mid_weight_4[IMAGE_H] = {
 // 预设权重数组5：峰值在第20-40行（最近）
 uint8 mid_weight_5[IMAGE_H] = {
 	1 ,1 ,1 ,1 ,1 ,1 ,1 ,1 ,1 ,1 ,
+	1 ,1 ,1 ,1 ,1 ,1 ,1 ,1 ,1 ,1 ,
+	1 ,1 ,1 ,1 ,1 ,1 ,1 ,1 ,1 ,1 ,
 	6 ,6 ,6 ,6 ,6 ,6 ,6 ,6 ,6 ,6 ,
 	7 ,8 ,9 ,10,11,12,13,14,15,16,
 	17,18,19,20,20,20,20,19,18,17,
@@ -152,11 +154,8 @@ uint8 mid_weight_5[IMAGE_H] = {
 	1 ,1 ,1 ,1 ,1 ,1 ,1 ,1 ,1 ,1 ,
 	1 ,1 ,1 ,1 ,1 ,1 ,1 ,1 ,1 ,1 ,
 	1 ,1 ,1 ,1 ,1 ,1 ,1 ,1 ,1 ,1 ,
-	1 ,1 ,1 ,1 ,1 ,1 ,1 ,1 ,1 ,1 ,
-	1 ,1 ,1 ,1 ,1 ,1 ,1 ,1 ,1 ,1 ,
 	1 ,1 ,1 ,1 ,1 ,1 ,1 ,1 ,1 ,1
 };
-
 // 当前使用的权重数组（默认使用权重数组2）
 uint8 mid_weight[IMAGE_H] = {
 	1 ,1 ,1 ,1 ,1 ,1 ,1 ,1 ,1 ,1 ,
@@ -334,7 +333,8 @@ void search_reference_col(const uint8 image[][IMAGE_W]){
 		}
 	}
 
-	for(col = 0;col < IMAGE_W;col+=CONTRASTOFFSET){
+	// 从右往左搜索最长白列（remote_distance最小的列）
+	for(col = IMAGE_W - 1; col >= 0; col -= CONTRASTOFFSET){
 		if(remote_distance[reference_col] > remote_distance[col])
 			reference_col = col;
 	}
@@ -1772,16 +1772,16 @@ void image_cross_analysis(void)
 	if(cross_flag == 1) {
 		// ========== 左边补线 ==========
 		// 步骤1：先找下拐点（从下往上搜索）
-		left_down = image_find_left_jump_point(IMAGE_H - 5, CROSS_TOP_LIMIT, 1);
+		left_down = image_find_left_jump_point(IMAGE_H - 5, 60, 1);
 		
 		// 步骤2：再找上拐点（动态限制搜索范围在下拐点上方）
 		if(left_down > CROSS_TOP_LIMIT + 10) {  // 下拐点有效且位置足够高
 			// 限制上拐点搜索到下拐点上方10行，避免找到同一个点
 			uint8 search_limit = left_down - 10;
-			left_up = image_find_left_jump_point(search_limit, CROSS_TOP_LIMIT, 0);
+			left_up = image_find_left_jump_point(search_limit, CROSS_TOP_LIMIT, 1);
 		} else {
 			// 下拐点无效或太低，正常搜索上拐点
-			left_up = image_find_left_jump_point(IMAGE_H - 5, CROSS_TOP_LIMIT, 0);
+			left_up = image_find_left_jump_point(IMAGE_H - 5, CROSS_TOP_LIMIT, 1);
 		}
 		
 		// 步骤3：后置检查，确保上下拐点有效且距离足够远
@@ -1814,16 +1814,16 @@ void image_cross_analysis(void)
 		
 		// ========== 右边补线 ==========
 		// 步骤1：先找下拐点（从下往上搜索）
-		right_down = image_find_right_jump_point(IMAGE_H - 5, CROSS_TOP_LIMIT, 1);
+		right_down = image_find_right_jump_point(IMAGE_H - 5, 60, 1);
 		
 		// 步骤2：再找上拐点（动态限制搜索范围在下拐点上方）
 		if(right_down > CROSS_TOP_LIMIT + 10) {  // 下拐点有效且位置足够高
 			// 限制上拐点搜索到下拐点上方10行，避免找到同一个点
 			uint8 search_limit = right_down - 10;
-			right_up = image_find_right_jump_point(search_limit, CROSS_TOP_LIMIT, 0);
+			right_up = image_find_right_jump_point(search_limit, CROSS_TOP_LIMIT, 1);
 		} else {
 			// 下拐点无效或太低，正常搜索上拐点
-			right_up = image_find_right_jump_point(IMAGE_H - 5, CROSS_TOP_LIMIT, 0);
+			right_up = image_find_right_jump_point(IMAGE_H - 5, CROSS_TOP_LIMIT, 1);
 		}
 		
 		// 步骤3：后置检查，确保上下拐点有效且距离足够远
