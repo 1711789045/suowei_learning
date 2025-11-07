@@ -167,4 +167,7 @@ void lenthen_Left_bondarise(int16 start);          // 自上而下补左线
 void lenthen_Right_bondarise(int16 start);         // 自上而下补右线
 void image_cross_analysis_OLD(void);               // 老十字主函数
 
+// MM32简化版十字函数
+void image_stretch_point(uint16 *array_value, uint8 num, uint8 direction, uint8 is_left);  // 单点延伸补线（改进版）
+
 #endif

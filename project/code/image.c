@@ -1655,12 +1655,13 @@ void image_connect_point(uint16 *array_value, uint8 num0, uint8 num1)
 }
 
 /**
- * @brief 单点延伸补线
+ * @brief 单点延伸补线（改进版：近端多点平均+斜率方向检查+兜底连线）
  * @param array_value 边线数组
  * @param num 起点行号
  * @param direction 延伸方向：1=向上（索引减小），0=向下（索引增大）
+ * @param is_left 是否为左边线（1=左边线，0=右边线）
  */
-void image_stretch_point(uint16 *array_value, uint8 num, uint8 direction)
+void image_stretch_point(uint16 *array_value, uint8 num, uint8 direction, uint8 is_left)
 {
 	if((num + 5 >= IMAGE_H) || (num - 5 <= 0))
 		return;
@@ -1668,20 +1669,65 @@ void image_stretch_point(uint16 *array_value, uint8 num, uint8 direction)
 	float temp_slope = 0;
     float point_1 = (float)array_value[num];
 	
-	if(direction) {  // 向上延伸
-		float point_2 = (float)array_value[num+5];
-		temp_slope = (point_1 - point_2) / 5;
-		for (int i = 0; i < STRETCH_NUM && num-i >= 5; i++)
-		{
-			array_value[num - i] = func_limit_ab((int8)(temp_slope * i) + array_value[num], 0, IMAGE_W-1);
+	if(direction) {  // 向上延伸（补拐点上方的远处）
+		// 近端多点采样：从拐点上方取3个参考点（-2, -3, -4行）
+		float slope_sum = 0;
+		int valid_slope_count = 0;
+		
+		for(int j = 2; j <= 4 && num-j >= 0; j++) {
+			float ref_point = (float)array_value[num-j];
+			float slope = (point_1 - ref_point) / j;
+			
+			// 斜率方向检查（剔除异常斜率）
+			uint8 slope_valid = 0;
+			if(is_left) {
+				// 左边线：slope应该在[-2, -0.4]范围内（向左延伸，但不能太陡或太平）
+				if(slope >= -2.0f && slope <= -0.4f) {
+					slope_valid = 1;
+				}
+			} else {
+				// 右边线：slope应该在[0.4, 2]范围内（向右延伸，但不能太陡或太平）
+				if(slope >= 0.4f && slope <= 2.0f) {
+					slope_valid = 1;
+				}
+			}
+			
+			// 只累加有效斜率
+			if(slope_valid) {
+				slope_sum += slope;
+				valid_slope_count++;
+			}
+		}
+		
+		// 如果有有效斜率，使用平均值
+		if(valid_slope_count > 0) {
+			temp_slope = slope_sum / valid_slope_count;
+			
+			// 正常延伸
+			for (int i = 0; i < STRETCH_NUM && num-i >= 5; i++)
+			{
+				array_value[num - i] = func_limit_ab((int)(temp_slope * i) + array_value[num], 0, IMAGE_W-1);
+			}
+		}
+		else {
+			// 斜率全部异常，使用兜底方案：连接到图像下角
+			if(is_left) {
+				// 左边线：连接到左下角(0, IMAGE_H-1)
+				image_connect_point(array_value, num, IMAGE_H - 1);
+				array_value[IMAGE_H - 1] = 0;
+			} else {
+				// 右边线：连接到右下角(IMAGE_W-1, IMAGE_H-1)
+				image_connect_point(array_value, num, IMAGE_H - 1);
+				array_value[IMAGE_H - 1] = IMAGE_W - 1;
+			}
 		}
 	}
-	else {  // 向下延伸
+	else {  // 向下延伸（保持不变，近端图像清晰干扰少）
 		float point_2 = (float)array_value[num-5];
 		temp_slope = (point_1 - point_2) / 5;
 		for (int i = 0; i < STRETCH_NUM && num+i <= IMAGE_H-1; i++)
 		{
-			array_value[num + i] = func_limit_ab((int8)(temp_slope * i) + array_value[num], 0, IMAGE_W-1);
+			array_value[num + i] = func_limit_ab((int)(temp_slope * i) + array_value[num], 0, IMAGE_W-1);
 		}
 	}
 }
@@ -1745,10 +1791,10 @@ void image_cross_analysis(void)
 			image_connect_point(left_edge_line, left_down, left_up);  // 两点连线
 		}
 		if(left_down && !left_up) {
-			image_stretch_point(left_edge_line, left_down, 1);  // 向上延伸
+			image_stretch_point(left_edge_line, left_down, 1, 1);  // 向上延伸，is_left=1
 		}
 		if(!left_down && left_up) {
-			image_stretch_point(left_edge_line, left_up, 0);  // 向下延伸
+			image_stretch_point(left_edge_line, left_up, 0, 1);  // 向下延伸，is_left=1
 		}
 		
 		// ========== 右边补线 ==========
@@ -1787,10 +1833,10 @@ void image_cross_analysis(void)
 			image_connect_point(right_edge_line, right_down, right_up);  // 两点连线
 		}
 		if(right_down && !right_up) {
-			image_stretch_point(right_edge_line, right_down, 1);  // 向上延伸
+			image_stretch_point(right_edge_line, right_down, 1, 0);  // 向上延伸，is_left=0
 		}
 		if(!right_down && right_up) {
-			image_stretch_point(right_edge_line, right_up, 0);  // 向下延伸
+			image_stretch_point(right_edge_line, right_up, 0, 0);  // 向下延伸，is_left=0
 		}
 		
 		// 退出十字：赛道宽度小于阈值
