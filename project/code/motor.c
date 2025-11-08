@@ -118,12 +118,9 @@ void motor_reset(void)
     encoder_clear_count(ENCODER_LEFT);
     encoder_clear_count(ENCODER_RIGHT);
     
-    // 6. 重置编码器卡尔曼滤波器状态（在清空硬件计数器之后）
-    extern KalmanFilter_t encoder_left_kalman;
-    extern KalmanFilter_t encoder_right_kalman;
-    KalmanFilter_Init(&encoder_left_kalman, ENCODER_KALMAN_Q, ENCODER_KALMAN_R, 0.0f);
-    KalmanFilter_Init(&encoder_right_kalman, ENCODER_KALMAN_Q, ENCODER_KALMAN_R, 0.0f);
-    
+    // 6. 重置编码器中值+低通滤波器状态（在清空硬件计数器之后）
+    encoder_reset_filters();
+
     printf("[MOTOR] Reset - All states cleared (PID + Targets + Encoder Filters + HW Counters)\r\n");
 }
 
