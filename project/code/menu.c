@@ -1023,6 +1023,12 @@ static menu_unit_t *menu_root = NULL;
 
 /**
  * @brief  创建菜单示例
+ * @note   速度环参数使用pid.h中的全局变量（左右轮共用）:
+ *         - speed_kp, speed_ki, speed_kd （共用参数，简化调参）
+ *         方向环参数使用pid.h中的全局变量: direction_kp, direction_ki, direction_kd
+ *         基础速度使用motor.h中的全局变量: basic_speed（通过temp_basic_speed延迟更新）
+ *         调试开关使用motor.h中的全局变量: speed_debug_enable, direction_debug_enable
+ *         差速系数使用motor.h中的全局变量: inner_wheel_ratio, outer_wheel_ratio
  */
 void menu_example_create(void)
 {
@@ -1085,58 +1091,40 @@ void menu_example_create(void)
     menu_auto_link_child(inner_ratio_unit, direction_page);
     menu_auto_link_child(outer_ratio_unit, direction_page);
 
-    // ========== 速度环三级参数 (左右轮独立PID+基础速度) ==========
+    // ========== 速度环三级参数 (左右轮共用PID+基础速度) ==========
     // 定义默认值
-    static float speed_left_kp_default = 0.0f;
-    static float speed_left_ki_default = 0.0f;
-    static float speed_left_kd_default = 0.0f;
-    static float speed_right_kp_default = 0.0f;
-    static float speed_right_ki_default = 0.0f;
-    static float speed_right_kd_default = 0.0f;
+    static float speed_kp_default = 0.0f;
+    static float speed_ki_default = 0.0f;
+    static float speed_kd_default = 0.0f;
     static int16 basic_speed_default = 100;
-    
+
     // 初始化临时变量（从motor.h的全局变量读取当前值）
     temp_basic_speed = basic_speed;
 
-    // 创建菜单单元（左轮）
-    static menu_unit_t* speed_left_kp_unit = NULL;
-    static menu_unit_t* speed_left_ki_unit = NULL;
-    static menu_unit_t* speed_left_kd_unit = NULL;
-    
-    // 创建菜单单元（右轮）
-    static menu_unit_t* speed_right_kp_unit = NULL;
-    static menu_unit_t* speed_right_ki_unit = NULL;
-    static menu_unit_t* speed_right_kd_unit = NULL;
+    // 创建菜单单元（共用PID参数）
+    static menu_unit_t* speed_kp_unit = NULL;
+    static menu_unit_t* speed_ki_unit = NULL;
+    static menu_unit_t* speed_kd_unit = NULL;
 
-    // 左轮PID参数
-    speed_left_kp_unit = menu_create_param("Left Kp", &speed_left_kp, CONFIG_TYPE_FLOAT, 0.1f, 2, 2);
-    speed_left_ki_unit = menu_create_param("Left Ki", &speed_left_ki, CONFIG_TYPE_FLOAT, 0.1f, 2, 2);
-    speed_left_kd_unit = menu_create_param("Left Kd", &speed_left_kd, CONFIG_TYPE_FLOAT, 0.1f, 2, 2);
-    
-    // 右轮PID参数
-    speed_right_kp_unit = menu_create_param("Right Kp", &speed_right_kp, CONFIG_TYPE_FLOAT, 0.1f, 2, 2);
-    speed_right_ki_unit = menu_create_param("Right Ki", &speed_right_ki, CONFIG_TYPE_FLOAT, 0.1f, 2, 2);
-    speed_right_kd_unit = menu_create_param("Right Kd", &speed_right_kd, CONFIG_TYPE_FLOAT, 0.1f, 2, 2);
-    
+    // 共用PID参数
+    speed_kp_unit = menu_create_param("Speed Kp", &speed_kp, CONFIG_TYPE_FLOAT, 0.1f, 2, 2);
+    speed_ki_unit = menu_create_param("Speed Ki", &speed_ki, CONFIG_TYPE_FLOAT, 0.1f, 2, 2);
+    speed_kd_unit = menu_create_param("Speed Kd", &speed_kd, CONFIG_TYPE_FLOAT, 0.1f, 2, 2);
+
     // ⭐ basic_speed使用临时变量，退出编辑时才更新真实值
     basic_speed_menu_unit = menu_create_param("Basic Speed", &temp_basic_speed, CONFIG_TYPE_INT16, 100.0f, 3, 0);
 
-    // ========== 注册到配置系统（调整顺序以兼容旧Flash）==========
-    // 旧Flash顺序：direction(5) → speed(3) → basic_speed(1) → image(2) = 11项
-    // 新顺序：    direction(5) → speed_left(3) → basic_speed(1) → image(2) → speed_right(3) = 14项
-    // 这样前11项保持兼容，后3项作为新增项
-    config_register_item("speed_left_kp", &speed_left_kp, CONFIG_TYPE_FLOAT, &speed_left_kp_default, "Left Kp");
-    config_register_item("speed_left_ki", &speed_left_ki, CONFIG_TYPE_FLOAT, &speed_left_ki_default, "Left Ki");
-    config_register_item("speed_left_kd", &speed_left_kd, CONFIG_TYPE_FLOAT, &speed_left_kd_default, "Left Kd");
-    config_register_item("basic_speed", &basic_speed, CONFIG_TYPE_INT16, &basic_speed_default, "Basic Speed");  // 保持在第8项位置
+    // ========== 注册到配置系统 ==========
+    // 配置顺序：direction(7) → speed(3) → basic_speed(1) → image(2) = 13项
+    config_register_item("speed_kp", &speed_kp, CONFIG_TYPE_FLOAT, &speed_kp_default, "Speed Kp");
+    config_register_item("speed_ki", &speed_ki, CONFIG_TYPE_FLOAT, &speed_ki_default, "Speed Ki");
+    config_register_item("speed_kd", &speed_kd, CONFIG_TYPE_FLOAT, &speed_kd_default, "Speed Kd");
+    config_register_item("basic_speed", &basic_speed, CONFIG_TYPE_INT16, &basic_speed_default, "Basic Speed");
 
-    // 链接到父页面（顺序：左轮3项 → 右轮3项 → 基础速度）
-    menu_auto_link_child(speed_left_kp_unit, speed_page);
-    menu_auto_link_child(speed_left_ki_unit, speed_page);
-    menu_auto_link_child(speed_left_kd_unit, speed_page);
-    menu_auto_link_child(speed_right_kp_unit, speed_page);
-    menu_auto_link_child(speed_right_ki_unit, speed_page);
-    menu_auto_link_child(speed_right_kd_unit, speed_page);
+    // 链接到父页面（共用PID参数+基础速度）
+    menu_auto_link_child(speed_kp_unit, speed_page);
+    menu_auto_link_child(speed_ki_unit, speed_page);
+    menu_auto_link_child(speed_kd_unit, speed_page);
     menu_auto_link_child(basic_speed_menu_unit, speed_page);
 
     // ========== Image三级参数 ==========
@@ -1146,25 +1134,19 @@ void menu_example_create(void)
     mid_weight_select_unit = menu_create_param("Weight Select", &mid_weight_select, CONFIG_TYPE_UINT16, 1.0f, 1, 0);
     config_register_item("mid_weight_select", &mid_weight_select, CONFIG_TYPE_UINT16, &mid_weight_select_default, "Weight Select");
     menu_auto_link_child(mid_weight_select_unit, image_page);
-    
+
     // cross_enable: 十字识别开关（0=关闭，1=简单版，2=复杂版）
     static uint16 cross_enable_default = 0;
     static menu_unit_t* cross_enable_unit = NULL;
     cross_enable_unit = menu_create_param("Cross Enable", &cross_enable, CONFIG_TYPE_UINT16, 1.0f, 1, 0);
     config_register_item("cross_enable", &cross_enable, CONFIG_TYPE_UINT16, &cross_enable_default, "Cross Enable");
     menu_auto_link_child(cross_enable_unit, image_page);
-    
+
     // stop_enable: 停车检测开关（0=关闭，1=开启）
     static uint8 stop_enable_default = 1;
     static menu_unit_t* stop_enable_unit = NULL;
     stop_enable_unit = menu_create_param("Stop Enable", &stop_enable, CONFIG_TYPE_UINT8, 1.0f, 1, 0);
     menu_auto_link_child(stop_enable_unit, image_page);
-
-    // ========== 右轮参数注册（放在最后，作为新增配置项）==========
-    // 前11项保持与旧Flash兼容，后3项为新增
-    config_register_item("speed_right_kp", &speed_right_kp, CONFIG_TYPE_FLOAT, &speed_right_kp_default, "Right Kp");
-    config_register_item("speed_right_ki", &speed_right_ki, CONFIG_TYPE_FLOAT, &speed_right_ki_default, "Right Ki");
-    config_register_item("speed_right_kd", &speed_right_kd, CONFIG_TYPE_FLOAT, &speed_right_kd_default, "Right Kd");
 
     // ========== Save_config二级菜单 ==========
     menu_unit_t *save_slot1 = menu_create_function("Slot 1", menu_func_save_slot1);
@@ -1223,14 +1205,10 @@ void menu_example_create(void)
 
     // ==================== 调试：打印速度环参数地址和初始值 ====================
     printf("[MENU] Speed PID parameters after menu creation:\r\n");
-    printf("[MENU]   Left  - Kp=%.2f (addr=0x%08X), Ki=%.2f (addr=0x%08X), Kd=%.2f (addr=0x%08X)\r\n",
-           speed_left_kp, (uint32)&speed_left_kp,
-           speed_left_ki, (uint32)&speed_left_ki,
-           speed_left_kd, (uint32)&speed_left_kd);
-    printf("[MENU]   Right - Kp=%.2f (addr=0x%08X), Ki=%.2f (addr=0x%08X), Kd=%.2f (addr=0x%08X)\r\n",
-           speed_right_kp, (uint32)&speed_right_kp,
-           speed_right_ki, (uint32)&speed_right_ki,
-           speed_right_kd, (uint32)&speed_right_kd);
+    printf("[MENU]   Shared - Kp=%.2f (addr=0x%08X), Ki=%.2f (addr=0x%08X), Kd=%.2f (addr=0x%08X)\r\n",
+           speed_kp, (uint32)&speed_kp,
+           speed_ki, (uint32)&speed_ki,
+           speed_kd, (uint32)&speed_kd);
 
 }
 

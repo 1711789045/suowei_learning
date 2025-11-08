@@ -112,10 +112,8 @@ void system_init(void)
     
     // 调试：打印速度环参数值
     printf("[DEBUG] After config_auto_load:\r\n");
-    printf("[DEBUG]   Left  - Kp=%.2f, Ki=%.2f, Kd=%.2f\r\n",
-           speed_left_kp, speed_left_ki, speed_left_kd);
-    printf("[DEBUG]   Right - Kp=%.2f, Ki=%.2f, Kd=%.2f\r\n",
-           speed_right_kp, speed_right_ki, speed_right_kd);
+    printf("[DEBUG]   Speed (Shared) - Kp=%.2f, Ki=%.2f, Kd=%.2f\r\n",
+           speed_kp, speed_ki, speed_kd);
 
     // 8. 进入菜单
     printf("[8/8] Entering menu...");

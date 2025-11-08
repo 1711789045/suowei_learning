@@ -27,7 +27,7 @@
 
 // PWM参数
 #define MOTOR_PWM_FREQ          (17000)                                    // PWM频率 17kHz
-#define MOTOR_PWM_MAX_DUTY      (4000)                                     // 最大占空比限制(0-10000对应0%-100%)
+#define MOTOR_PWM_MAX_DUTY      (6000)                                     // 最大占空比限制(0-10000对应0%-100%)
 
 // ==================== 速度环参数（外部可访问）====================
 extern uint8 speed_debug_enable;                                           // 速度环调试开关(1=开启, 0=关闭)
