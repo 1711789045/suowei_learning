@@ -205,9 +205,9 @@ void motor_process(void)
     // ==================== 速度环调试模式 ====================
     else if (speed_debug_enable)
     {
-        // 速度环调试：直接设置目标速度
-        target_left = current_running_speed;
-        target_right = current_running_speed;
+        // 速度环调试：直接使用basic_speed作为目标速度
+        target_left = basic_speed;
+        target_right = basic_speed;
     }
     
     // ==================== 速度环控制 (5ms周期) ====================
